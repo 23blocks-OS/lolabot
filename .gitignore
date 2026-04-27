@@ -1,0 +1,31 @@
+# Personal data (never push)
+lolabot.yaml
+brain/credentials*.yaml
+brain/companies*.yaml
+brain/*-private.yaml
+brain/eisenhower.md
+brain/companies.md
+brain/finances.md
+memory/*.md
+!memory/README.md
+emails/
+indexes/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+*.secret
+*.pem
+*.key
+secrets.yaml
