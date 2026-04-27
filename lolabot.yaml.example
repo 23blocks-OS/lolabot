@@ -1,0 +1,52 @@
+# lolabot.yaml - PA Instance Configuration
+# Copy this file to lolabot.yaml and customize for your instance.
+# This file is git-ignored — it contains instance-specific settings.
+
+agent:
+  name: "MyAssistant"
+  role: "Personal Assistant"
+
+user:
+  name: "Your Name"
+  preferred_language: "English"
+  native_language: "English"
+
+# Paths (relative to LOLABOT_HOME, or absolute)
+paths:
+  credentials: "brain/credentials.yaml"
+  emails_dir: "emails"
+  indexes_dir: "indexes"
+  memory_dir: "memory"
+  brain_dir: "brain"
+  venv: ".venv"
+
+# Email configuration
+email:
+  accounts:
+    # - address: "you@example.com"
+    #   config_key: "you_example"
+    #   imap_server: "imap.example.com"
+    #   imap_port: 993
+    #   smtp_server: "smtp.example.com"
+    #   smtp_port: 465
+  operator_emails: []
+    # - "you@example.com"
+
+# Memory system
+memory:
+  long_term_index: "indexes/memories.mv2"
+  short_term_index: "indexes/short-term.mv2"
+  metadata_db: "indexes/memory_meta.db"
+  similarity_threshold: 0.85
+  default_confidence: 0.7
+
+# File index
+files:
+  index_path: "indexes/files.mv2"
+
+# Security
+security:
+  integrity_checksum_file: "indexes/integrity-checksums.sha256"
+  watched_files:
+    - "CLAUDE.md"
+    - "brain/*.md"
