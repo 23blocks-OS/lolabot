@@ -24,10 +24,13 @@ import argparse
 import re
 import sqlite3
 import hashlib
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 import json
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from config import load_config, get_path
 
 try:
     import memvid_sdk
@@ -36,20 +39,28 @@ except ImportError:
     MEMVID_AVAILABLE = False
     print("Warning: memvid-sdk not installed. Install with: pip install memvid-sdk")
 
-# Ensure we can import sibling modules (config)
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from config import get_path
-
-# Configuration — resolved from lolabot.yaml via config.py
+# Configuration (resolved from lolabot.yaml via config.py)
 LONG_TERM_INDEX = get_path('long_term_index')
 SHORT_TERM_INDEX = get_path('short_term_index')
 METADATA_DB = get_path('metadata_db')
-INDEX_PATH = LONG_TERM_INDEX  # Default to long-term for backwards compatibility
-SIMILARITY_THRESHOLD = 0.85  # Memories with similarity > this are considered duplicates
+INDEX_PATH = LONG_TERM_INDEX
 DEFAULT_CONFIDENCE = 0.7     # Default confidence for new memories
 REINFORCEMENT_BOOST = 0.05   # How much confidence increases on reinforcement
-PROMOTION_THRESHOLD_DAYS = 7 # Days before eligible for promotion
 PROMOTION_MIN_REINFORCEMENT = 2  # Minimum reinforcements to auto-promote
+
+# Review-after defaults (months) by memory type — how long before a memory should be reviewed for staleness
+REVIEW_AFTER_MONTHS = {
+    'fact': 6,
+    'event': 0,       # Events don't go stale (they happened)
+    'learning': 12,
+    'decision': 6,
+    'note': 12,
+    'person': 3,       # Contact info changes often
+    'goal': 3,
+    'preference': 6,
+    'pattern': 12,
+    'insight': 12,
+}
 
 
 class MemoryMetadataDB:
@@ -66,26 +77,46 @@ class MemoryMetadataDB:
         self._create_schema()
 
     def _create_schema(self):
-        """Create tables if they don't exist."""
-        self.conn.executescript('''
+        """Create tables if they don't exist, and migrate existing tables."""
+        # Create table with all columns (for new databases)
+        self.conn.execute('''
             CREATE TABLE IF NOT EXISTS memory_meta (
                 memory_id TEXT PRIMARY KEY,
                 content_hash TEXT NOT NULL,
                 memory_type TEXT NOT NULL,
-                index_type TEXT NOT NULL,  -- 'long_term' or 'short_term'
+                index_type TEXT NOT NULL,
                 confidence REAL DEFAULT 0.7,
                 access_count INTEGER DEFAULT 0,
                 reinforcement_count INTEGER DEFAULT 1,
                 created_at TEXT NOT NULL,
                 last_accessed TEXT,
                 last_reinforced TEXT,
-                content_preview TEXT
-            );
+                content_preview TEXT,
+                review_after TEXT,
+                topic_key TEXT,
+                deleted INTEGER DEFAULT 0
+            )
+        ''')
 
+        # Migrate: add new columns if they don't exist (for existing databases)
+        existing_cols = {row[1] for row in self.conn.execute("PRAGMA table_info(memory_meta)").fetchall()}
+        for col, coltype, default in [
+            ('review_after', 'TEXT', None),
+            ('topic_key', 'TEXT', None),
+            ('deleted', 'INTEGER', '0'),
+        ]:
+            if col not in existing_cols:
+                default_clause = f" DEFAULT {default}" if default else ""
+                self.conn.execute(f"ALTER TABLE memory_meta ADD COLUMN {col} {coltype}{default_clause}")
+
+        # Create all indexes
+        self.conn.executescript('''
             CREATE INDEX IF NOT EXISTS idx_content_hash ON memory_meta(content_hash);
             CREATE INDEX IF NOT EXISTS idx_index_type ON memory_meta(index_type);
             CREATE INDEX IF NOT EXISTS idx_access_count ON memory_meta(access_count DESC);
             CREATE INDEX IF NOT EXISTS idx_reinforcement_count ON memory_meta(reinforcement_count DESC);
+            CREATE INDEX IF NOT EXISTS idx_review_after ON memory_meta(review_after);
+            CREATE INDEX IF NOT EXISTS idx_topic_key ON memory_meta(topic_key);
         ''')
         self.conn.commit()
 
@@ -116,19 +147,26 @@ class MemoryMetadataDB:
         return dict(row) if row else None
 
     def create(self, content: str, memory_type: str, index_type: str,
-               confidence: float = DEFAULT_CONFIDENCE) -> str:
+               confidence: float = DEFAULT_CONFIDENCE, topic_key: str = None) -> str:
         """Create metadata record for new memory."""
         content_hash = self._hash_content(content)
         memory_id = f"{index_type[:1]}_{content_hash[:12]}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
         now = datetime.now().isoformat()
 
+        # Calculate review_after date based on memory type
+        months = REVIEW_AFTER_MONTHS.get(memory_type, 12)
+        review_after = None
+        if months > 0:
+            review_after = (datetime.now() + timedelta(days=months * 30)).strftime('%Y-%m-%d')
+
         self.conn.execute('''
             INSERT INTO memory_meta
             (memory_id, content_hash, memory_type, index_type, confidence,
-             access_count, reinforcement_count, created_at, content_preview)
-            VALUES (?, ?, ?, ?, ?, 0, 1, ?, ?)
+             access_count, reinforcement_count, created_at, content_preview,
+             review_after, topic_key)
+            VALUES (?, ?, ?, ?, ?, 0, 1, ?, ?, ?, ?)
         ''', (memory_id, content_hash, memory_type, index_type, confidence,
-              now, content[:100]))
+              now, content[:100], review_after, topic_key))
         self.conn.commit()
         return memory_id
 
@@ -235,6 +273,44 @@ class MemoryMetadataDB:
         ''', (memory_id,))
         self.conn.commit()
 
+    def find_by_topic_key(self, topic_key: str) -> Optional[Dict]:
+        """Find metadata by topic key (for upsert pattern)."""
+        row = self.conn.execute(
+            'SELECT * FROM memory_meta WHERE topic_key = ? AND deleted = 0',
+            (topic_key,)
+        ).fetchone()
+        return dict(row) if row else None
+
+    def mark_deleted(self, memory_id: str):
+        """Soft-delete a memory."""
+        self.conn.execute('''
+            UPDATE memory_meta SET deleted = 1 WHERE memory_id = ?
+        ''', (memory_id,))
+        self.conn.commit()
+
+    def get_stale(self) -> List[Dict]:
+        """Get memories due for review (review_after < today)."""
+        today = datetime.now().strftime('%Y-%m-%d')
+        rows = self.conn.execute('''
+            SELECT * FROM memory_meta
+            WHERE review_after IS NOT NULL
+            AND review_after <= ?
+            AND deleted = 0
+            ORDER BY review_after ASC
+        ''', (today,)).fetchall()
+        return [dict(row) for row in rows]
+
+    def refresh_review(self, memory_id: str, memory_type: str):
+        """Reset review_after date based on memory type."""
+        months = REVIEW_AFTER_MONTHS.get(memory_type, 12)
+        if months == 0:
+            return
+        review_date = (datetime.now() + timedelta(days=months * 30)).strftime('%Y-%m-%d')
+        self.conn.execute('''
+            UPDATE memory_meta SET review_after = ? WHERE memory_id = ?
+        ''', (review_date, memory_id))
+        self.conn.commit()
+
 # Memory types
 class MemoryType:
     FACT = "fact"           # Things that are true (Juan lives in Boulder)
@@ -295,9 +371,17 @@ class MemoryIndex:
             "basic",
             self.index_path,
             mode=mode,
-            enable_vec=True,
+            enable_vec=False,
             enable_lex=True,
         )
+
+        # Workaround for memvid Issue #194: lex index may not persist on re-open
+        try:
+            stats = self.mem.stats()
+            if not stats.get('lex_enabled'):
+                self.mem.enable_lex()
+        except Exception:
+            pass
 
         # Connect SQLite metadata database
         self.meta_db.connect()
@@ -310,7 +394,7 @@ class MemoryIndex:
         # Close SQLite metadata database
         self.meta_db.close()
 
-    def find_similar(self, content: str, threshold: float = SIMILARITY_THRESHOLD) -> Optional[Dict[str, Any]]:
+    def find_similar(self, content: str, threshold: float = 0.85) -> Optional[Dict[str, Any]]:
         """Find a similar existing memory for deduplication."""
         if not self.mem:
             self.open()
@@ -364,6 +448,7 @@ class MemoryIndex:
         confidence: float = None,
         context: str = None,
         skip_dedup: bool = False,
+        topic_key: str = None,
     ) -> Dict[str, Any]:
         """Add a memory to the index with deduplication.
 
@@ -376,6 +461,32 @@ class MemoryIndex:
             self.open(create=not os.path.exists(self.index_path))
 
         today = date.today().isoformat()
+
+        # Topic key upsert: if topic_key exists, correct (supersede) the old value
+        if topic_key and self.meta_db.conn:
+            existing = self.meta_db.find_by_topic_key(topic_key)
+            if existing:
+                # Use memvid correct() to supersede with priority boost
+                topics = [topic_key] + (tags or [])
+                frame_id = self.mem.correct(content, topics=topics, boost=2.0)
+                # Update SQLite: mark old as deleted, create new
+                self.meta_db.mark_deleted(existing['memory_id'])
+                memory_id = self.meta_db.create(
+                    content=content, memory_type=memory_type,
+                    index_type=self.index_type, confidence=confidence or DEFAULT_CONFIDENCE,
+                    topic_key=topic_key
+                )
+                self.close()
+                self.open()
+                print(f"  → Topic '{topic_key}' updated (old superseded, new correction boosted)")
+                return {
+                    'action': 'corrected',
+                    'content': content[:50] + '...',
+                    'topic_key': topic_key,
+                    'frame_id': frame_id,
+                    'memory_id': memory_id,
+                    'previous_id': existing['memory_id']
+                }
 
         # Check for existing similar memory (deduplication)
         if not skip_dedup:
@@ -481,7 +592,8 @@ class MemoryIndex:
                 content=content,
                 memory_type=memory_type,
                 index_type=self.index_type,
-                confidence=mem_confidence
+                confidence=mem_confidence,
+                topic_key=topic_key
             )
 
         # Close and reopen to persist
@@ -571,7 +683,11 @@ class MemoryIndex:
 
         search_query = " ".join(search_parts)
 
-        result = self.mem.find(search_query, k=limit * 2)
+        try:
+            result = self.mem.find(search_query, k=limit * 2, mode='auto', min_relevancy=0.3)
+        except TypeError:
+            # Fallback for older memvid-sdk versions without mode/min_relevancy
+            result = self.mem.find(search_query, k=limit * 2)
 
         hits = []
         seen_content = set()
@@ -720,6 +836,67 @@ class MemoryIndex:
         return self.find("Memory", limit=limit, track_access=False)
 
 
+    def correct_memory(self, statement: str, topics: List[str] = None, source: str = None) -> Dict[str, Any]:
+        """Store a correction that supersedes conflicting memories in search."""
+        if not self.mem:
+            self.open(create=not os.path.exists(self.index_path))
+
+        frame_id = self.mem.correct(statement, topics=topics, source=source, boost=2.0)
+
+        # Also track in SQLite
+        if self.meta_db.conn:
+            self.meta_db.create(
+                content=statement,
+                memory_type=MemoryType.FACT,
+                index_type=self.index_type,
+                confidence=0.95  # Corrections get high confidence
+            )
+
+        self.close()
+        self.open()
+
+        return {
+            'action': 'corrected',
+            'content': statement[:50] + '...',
+            'frame_id': frame_id,
+            'topics': topics
+        }
+
+    def remove_memory(self, frame_id) -> Dict[str, Any]:
+        """Soft-delete a memory by frame ID."""
+        if not self.mem:
+            self.open()
+
+        seq = self.mem.remove(frame_id)
+        return {
+            'action': 'removed',
+            'frame_id': frame_id,
+            'sequence': seq
+        }
+
+    def enrich_memories(self) -> Dict[str, Any]:
+        """Extract structured SPO triplets from memories."""
+        if not self.mem:
+            self.open()
+
+        result = self.mem.enrich(engine='rules')
+        return result
+
+    def get_entities(self) -> List[str]:
+        """Get all known entities from memory cards."""
+        if not self.mem:
+            self.open()
+
+        return self.mem.memory_entities()
+
+    def get_memories_for_entity(self, entity: str) -> Dict[str, Any]:
+        """Get structured memory cards for an entity."""
+        if not self.mem:
+            self.open()
+
+        return self.mem.memories(entity=entity)
+
+
 def promote_memories(dry_run: bool = False, min_reinforcement: int = PROMOTION_MIN_REINFORCEMENT) -> Dict[str, Any]:
     """Promote mature short-term memories to long-term.
 
@@ -863,11 +1040,15 @@ def cmd_add(args):
         confidence=args.confidence,
         context=args.context,
         skip_dedup=args.force,
+        topic_key=getattr(args, 'topic_key', None),
     )
 
     if result['action'] == 'created':
         print(f"Added to {index_name}: {result['content']}")
         print(f"  Type: {args.type}, Confidence: {result['confidence']}")
+    elif result['action'] == 'corrected':
+        print(f"Updated in {index_name}: {result['content']}")
+        print(f"  Topic key: {result.get('topic_key', 'N/A')} (previous memory superseded)")
     else:
         print(f"Reinforced in {index_name}: {result['content']}")
         print(f"  Reinforcement count: {result['reinforcement_count']}")
@@ -1168,6 +1349,31 @@ def cmd_migrate(args):
     meta_db = MemoryMetadataDB()
     meta_db.connect()
 
+    # Schema migration: add new columns if they don't exist
+    try:
+        meta_db.conn.execute("SELECT review_after FROM memory_meta LIMIT 1")
+    except Exception:
+        print("Adding new columns (review_after, topic_key, deleted)...")
+        meta_db.conn.execute("ALTER TABLE memory_meta ADD COLUMN review_after TEXT")
+        meta_db.conn.execute("ALTER TABLE memory_meta ADD COLUMN topic_key TEXT")
+        meta_db.conn.execute("ALTER TABLE memory_meta ADD COLUMN deleted INTEGER DEFAULT 0")
+        meta_db.conn.execute("CREATE INDEX IF NOT EXISTS idx_review_after ON memory_meta(review_after)")
+        meta_db.conn.execute("CREATE INDEX IF NOT EXISTS idx_topic_key ON memory_meta(topic_key)")
+        meta_db.conn.commit()
+        print("  Done.\n")
+
+        # Backfill review_after for existing records
+        print("Backfilling review_after dates for existing memories...")
+        for mem_type, months in REVIEW_AFTER_MONTHS.items():
+            if months > 0:
+                meta_db.conn.execute('''
+                    UPDATE memory_meta
+                    SET review_after = date(created_at, '+' || ? || ' days')
+                    WHERE memory_type = ? AND review_after IS NULL
+                ''', (months * 30, mem_type))
+        meta_db.conn.commit()
+        print("  Done.\n")
+
     migrated = 0
     skipped = 0
     errors = 0
@@ -1244,6 +1450,105 @@ def cmd_migrate(args):
     print(f"Total errors: {errors}")
 
 
+def cmd_correct(args):
+    """Store a correction that supersedes conflicting memories."""
+    index = MemoryIndex.long_term()
+    try:
+        index.open(create=not os.path.exists(index.index_path))
+        topics = args.topics.split(',') if args.topics else None
+        result = index.correct_memory(args.statement, topics=topics, source=args.source)
+        print(f"Correction stored: {result['content']}")
+        if topics:
+            print(f"  Topics: {', '.join(topics)}")
+        print(f"  Frame ID: {result['frame_id']}")
+        print(f"  This correction will rank higher than conflicting memories in search.")
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        index.close()
+
+
+def cmd_remove(args):
+    """Soft-delete a memory by frame ID."""
+    index = MemoryIndex.long_term()
+    try:
+        index.open()
+        result = index.remove_memory(int(args.frame_id))
+        print(f"Memory removed (soft delete): frame {result['frame_id']}")
+
+        # Also mark in SQLite if we can find it
+        meta_db = MemoryMetadataDB()
+        meta_db.connect()
+        # We don't have a direct frame_id → memory_id mapping, so just inform
+        print("  Note: SQLite metadata not updated (no frame_id mapping). Use 'migrate' to re-sync.")
+        meta_db.close()
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        index.close()
+
+
+def cmd_stale(args):
+    """Show memories due for review (review_after has passed)."""
+    meta_db = MemoryMetadataDB()
+    meta_db.connect()
+
+    stale = meta_db.get_stale()
+
+    if not stale:
+        print("No stale memories found. All memories are current.")
+        meta_db.close()
+        return
+
+    print(f"Found {len(stale)} memories due for review:\n")
+
+    for i, mem in enumerate(stale, 1):
+        icon = {'fact': '📌', 'event': '📅', 'learning': '💡', 'decision': '⚖️',
+                'note': '📝', 'person': '👤', 'goal': '🎯', 'preference': '⭐',
+                'pattern': '🔄', 'insight': '🧠'}.get(mem['memory_type'], '📝')
+
+        print(f"{i}. {icon} [{mem['memory_type']}] {mem['content_preview']}")
+        print(f"   Review due: {mem['review_after']} | Created: {mem['created_at'][:10]}")
+        print(f"   ID: {mem['memory_id']}")
+        if args.refresh:
+            meta_db.refresh_review(mem['memory_id'], mem['memory_type'])
+            print(f"   → Review date refreshed")
+        print()
+
+    if not args.refresh:
+        print("To refresh review dates: memory_indexer.py stale --refresh")
+        print("To correct a memory: memory_indexer.py correct \"updated fact\" --topics \"topic\"")
+        print("To remove a stale memory: memory_indexer.py remove <frame_id>")
+
+    meta_db.close()
+
+
+def cmd_enrich(args):
+    """Extract structured knowledge (SPO triplets) from memories."""
+    index = MemoryIndex.long_term()
+    try:
+        index.open()
+        print("Enriching memories (extracting structured knowledge)...\n")
+        result = index.enrich_memories()
+        print(f"Enrichment result: {result}\n")
+
+        entities = index.get_entities()
+        if entities:
+            print(f"Known entities ({len(entities)}):")
+            for entity in sorted(entities):
+                cards = index.get_memories_for_entity(entity)
+                count = cards.get('count', 0)
+                print(f"  • {entity} ({count} facts)")
+                for card in cards.get('cards', [])[:3]:
+                    print(f"    {card.get('slot', '?')}: {card.get('value', '?')}")
+        else:
+            print("No structured entities extracted yet.")
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        index.close()
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Lola Memory Indexer - Index and search knowledge/facts/events"
@@ -1265,6 +1570,7 @@ def main():
     add_parser.add_argument("--context", help="Additional context or reasoning")
     add_parser.add_argument("--force", action="store_true", help="Skip deduplication, always add new")
     add_parser.add_argument("--short-term", "-S", action="store_true", help="Add to short-term memory (staging)")
+    add_parser.add_argument("--topic-key", "-k", help="Topic key for upsert (evolving facts update in-place)")
     add_parser.set_defaults(func=cmd_add)
 
     # Find command
@@ -1305,6 +1611,27 @@ def main():
     migrate_parser = subparsers.add_parser("migrate", help="Migrate existing Memvid memories to SQLite metadata")
     migrate_parser.add_argument("--verbose", "-v", action="store_true", help="Show each migrated memory")
     migrate_parser.set_defaults(func=cmd_migrate)
+
+    # Correct command (new — supersede conflicting memories)
+    correct_parser = subparsers.add_parser("correct", help="Store a correction that supersedes conflicting memories")
+    correct_parser.add_argument("statement", help="The corrected fact/statement")
+    correct_parser.add_argument("--topics", help="Comma-separated topics for retrieval matching")
+    correct_parser.add_argument("--source", help="Source of the correction")
+    correct_parser.set_defaults(func=cmd_correct)
+
+    # Remove command (new — soft delete)
+    remove_parser = subparsers.add_parser("remove", help="Soft-delete a memory by frame ID")
+    remove_parser.add_argument("frame_id", help="Frame ID to remove (from put/find results)")
+    remove_parser.set_defaults(func=cmd_remove)
+
+    # Stale command (new — review stale memories)
+    stale_parser = subparsers.add_parser("stale", help="Show memories due for review")
+    stale_parser.add_argument("--refresh", action="store_true", help="Refresh review dates for all stale memories")
+    stale_parser.set_defaults(func=cmd_stale)
+
+    # Enrich command (new — extract structured SPO knowledge)
+    enrich_parser = subparsers.add_parser("enrich", help="Extract structured knowledge (entities, facts) from memories")
+    enrich_parser.set_defaults(func=cmd_enrich)
 
     args = parser.parse_args()
 

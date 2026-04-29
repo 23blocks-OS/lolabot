@@ -5,6 +5,10 @@ Lola Email Client
 IMAP/SMTP email client for reading and sending emails.
 Supports multiple accounts with local caching and search.
 
+Accounts:
+- jpelaez@3metas.com - Read and reply on Juan's behalf
+- lola@3metas.com - Lola's own inbox
+
 Usage:
     python email_client.py check jpelaez@3metas.com
     python email_client.py read jpelaez@3metas.com 12345
@@ -40,9 +44,6 @@ try:
 except ImportError:
     YAML_AVAILABLE = False
 
-# Ensure we can import sibling modules (config, email_sanitizer)
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from config import load_config, get_path
 from email_sanitizer import sanitize_email as _sanitize_email, assess_attachment, format_security_summary
 
 
@@ -61,18 +62,18 @@ def _strip_security_tags(text: str) -> str:
     return text
 
 
-# Configuration — resolved from lolabot.yaml via config.py
+# Configuration (resolved from lolabot.yaml via config.py)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from config import load_config, get_path
+
 CONFIG_FILE = get_path('credentials')
 EMAILS_DIR = get_path('emails_dir')
 INDEX_PATH = get_path('emails_index')
 
-# Account mapping — loaded from lolabot.yaml email.accounts (fallback: empty dict)
+# Account mapping — loaded from lolabot.yaml email.accounts, fallback to empty
 _cfg = load_config()
-ACCOUNT_MAP = {
-    acct['address']: acct['config_key']
-    for acct in _cfg.get('email', {}).get('accounts', [])
-    if 'address' in acct and 'config_key' in acct
-}
+_accounts = _cfg.get('email', {}).get('accounts', [])
+ACCOUNT_MAP = {a['address']: a['config_key'] for a in _accounts if 'address' in a and 'config_key' in a}
 
 
 def load_credentials() -> Dict[str, Any]:
