@@ -56,6 +56,8 @@ cd ~/my-assistant && claude
 
 Lola is a framework, not a product. Fork it, customize `CLAUDE.TEMPLATE.md`, swap tools in and out, and make her yours.
 
+> Want more agents beyond Lola? Browse 150+ specialist personalities at [The Agent Library](https://github.com/msitarzewski/agency-agents) and give them skills with the [Plugin Builder](https://github.com/23blocks-OS/ai-maestro-plugins).
+
 ## Project Structure
 
 ```
