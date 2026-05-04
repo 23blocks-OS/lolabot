@@ -1,6 +1,6 @@
 # lolabot
 
-**Your First Hire** — AI Chief of Staff framework for [AI Maestro](https://github.com/23blocks-OS/ai-maestro).
+**Your AI Chief of Staff** — Personal Assistant framework for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Email, semantic memory, task management, content security.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform: macOS](https://img.shields.io/badge/Platform-macOS-lightgrey.svg)]()
@@ -10,9 +10,9 @@
 
 ## Why Lola?
 
-You installed [AI Maestro](https://github.com/23blocks-OS/ai-maestro) to run your AI-first organization. Now you need your first agent. Lola is a batteries-included Chief of Staff — she handles email, remembers everything, manages your tasks, and keeps your files organized. Deploy her in minutes, then add more agents as your org grows.
+Lola is a batteries-included AI Chief of Staff. She handles email, remembers everything, manages your tasks, and keeps your files organized. Clone the repo, run `setup.sh`, and point Claude Code at it — she's ready in minutes.
 
-Lola works standalone with Claude Code, but she shines on AI Maestro: persistent memory across sessions, inter-agent messaging via AMP, and multi-machine orchestration.
+Lola runs standalone with just Claude Code. Optionally, deploy her on [AI Maestro](https://github.com/23blocks-OS/ai-maestro) for persistent memory across sessions, inter-agent messaging via AMP, and multi-machine orchestration.
 
 ## What You Get
 
@@ -26,7 +26,7 @@ Lola works standalone with Claude Code, but she shines on AI Maestro: persistent
 
 ## Quick Start
 
-> **Recommended:** Install [AI Maestro](https://github.com/23blocks-OS/ai-maestro) first for persistent memory, messaging, and multi-agent orchestration. Lola also works standalone with just Claude Code.
+> **Optional:** For persistent memory, inter-agent messaging, and multi-machine orchestration, deploy Lola on [AI Maestro](https://github.com/23blocks-OS/ai-maestro).
 
 ```bash
 # Clone the repo
@@ -49,10 +49,10 @@ cd ~/my-assistant && claude
 
 ## How It Works
 
-1. **Install AI Maestro** — Your control plane for AI agents
-2. **Deploy Lola** — Clone this repo, run `setup.sh`, point Claude Code at it
-3. **She gets to work** — Terminal access, semantic memory, email, file indexing — all wired up
-4. **Add more agents** — Lola can message other agents via AMP, delegate tasks, and coordinate
+1. **Clone & scaffold** — `setup.sh` creates your PA instance directory with config, tools, and skills
+2. **Configure** — Edit `lolabot.yaml` with your email accounts, preferences, and paths
+3. **Launch** — Run `claude` in your instance directory — Lola has everything she needs
+4. **Scale up** (optional) — Deploy on [AI Maestro](https://github.com/23blocks-OS/ai-maestro) to add more agents, messaging, and orchestration
 
 Lola is a framework, not a product. Fork it, customize `CLAUDE.TEMPLATE.md`, swap tools in and out, and make her yours.
 
@@ -109,7 +109,7 @@ lolabot includes defense-in-depth for AI assistants:
 ## Requirements
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) (Claude Max or API key)
-- [AI Maestro](https://github.com/23blocks-OS/ai-maestro) (recommended — persistent memory, messaging, multi-machine)
+- [AI Maestro](https://github.com/23blocks-OS/ai-maestro) (optional — persistent memory, messaging, multi-machine)
 - Python 3.10+
 - `uv` (recommended) or `pip`
 - Python packages: `memvid-sdk`, `pyyaml`, `pillow-heif`
@@ -118,4 +118,4 @@ lolabot includes defense-in-depth for AI assistants:
 
 MIT — [23blocks Inc.](https://23blocks.com)
 
-Built for [AI Maestro](https://github.com/23blocks-OS/ai-maestro) — the OS for AI-first organizations.
+Works standalone or on [AI Maestro](https://github.com/23blocks-OS/ai-maestro) — the OS for AI-first organizations.
