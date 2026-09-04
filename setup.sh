@@ -113,9 +113,32 @@ header "System Configuration"
 
 ask "System hostname (e.g., mini-lola, homelab, macbook)" "$(hostname)" SYSTEM_NAME
 ask "Operating system" "$(uname -s)" SYSTEM_OS
-ask "RAM (e.g., 4 GB, 16 GB)" "" SYSTEM_RAM
-ask "Storage (e.g., 256 GB, 1 TB)" "" SYSTEM_STORAGE
-ask "System hardware (e.g., Mac Mini, Raspberry Pi, Desktop)" "" SYSTEM_HARDWARE
+# Detect hardware facts so the user can just press Enter. These are descriptive
+# only — they land in CLAUDE.md so the agent knows what machine it lives on.
+detect_ram() {
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+        local b; b=$(sysctl -n hw.memsize 2>/dev/null) && [ -n "$b" ] && echo "$((b / 1073741824)) GB" && return
+    else
+        local k; k=$(awk '/MemTotal/{print $2}' /proc/meminfo 2>/dev/null) && [ -n "$k" ] && echo "$(( (k + 524288) / 1048576 )) GB" && return
+    fi
+    echo "unknown"
+}
+detect_storage() {
+    local s; s=$(df -Ph "$HOME" 2>/dev/null | awk 'NR==2{print $2}') && [ -n "$s" ] && echo "$s" && return
+    echo "unknown"
+}
+detect_hardware() {
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+        local m; m=$(sysctl -n hw.model 2>/dev/null) && [ -n "$m" ] && echo "$m" && return
+    else
+        local m; m=$(cat /sys/devices/virtual/dmi/id/product_name 2>/dev/null) && [ -n "$m" ] && echo "$m" && return
+    fi
+    echo "$(uname -m) machine"
+}
+
+ask "RAM" "$(detect_ram)" SYSTEM_RAM
+ask "Storage" "$(detect_storage)" SYSTEM_STORAGE
+ask "System hardware" "$(detect_hardware)" SYSTEM_HARDWARE
 ask "Timezone (e.g., America/Denver, UTC)" "$(cat /etc/timezone 2>/dev/null || echo 'UTC')" SYSTEM_TIMEZONE
 
 header "Email Configuration (optional — press Enter to skip)"
@@ -472,15 +495,20 @@ echo "  ├── tests/"
 echo "  ├── docs/"
 echo "  └── prompts/"
 echo ""
-echo -e "${BOLD}Next steps:${NC}"
-echo -e "  1. ${CYAN}cd $TARGET_DIR${NC}"
-echo -e "  2. Review and customize ${CYAN}CLAUDE.md${NC} (uncomment sections you need)"
-echo -e "  3. Add credentials to ${CYAN}brain/credentials.yaml${NC} (gitignored)"
-echo -e "  4. Copy/configure tools (file_indexer.py, memory_indexer.py, email.sh)"
-echo -e "  5. Set up email accounts in ${CYAN}tools/email.sh${NC}"
-echo -e "  6. ${CYAN}git add -A && git commit -m 'Initial PA setup'${NC}"
+echo -e "${BOLD}One thing left. Run this:${NC}"
 echo ""
-echo -e "${BOLD}Quick start with Claude Code:${NC}"
-echo -e "  ${CYAN}cd $TARGET_DIR && claude${NC}"
+echo -e "     ${CYAN}cd $TARGET_DIR && claude${NC}"
 echo ""
-echo -e "${GREEN}${BOLD}Happy automating!${NC}"
+echo -e "$AGENT_NAME will introduce itself and ask four short questions —"
+echo -e "what to call you, what the job is, what to handle weekly, and how you will"
+echo -e "judge it in six weeks. ${BOLD}You can skip any of them.${NC}"
+echo ""
+echo -e "${BOLD}Everything else can wait until you need it:${NC}"
+echo -e "  Email, memory search and file indexing are ${BOLD}off${NC} until you set them up."
+echo -e "  Ask $AGENT_NAME to walk you through any of them — that is what it is for."
+echo -e "  Credentials go in ${CYAN}brain/credentials.yaml${NC}, which is git-ignored."
+echo ""
+echo -e "${BOLD}Want to launch it by typing one word?${NC}"
+echo -e "  ${CYAN}$SCRIPT_DIR/scripts/make-launcher.sh $TARGET_DIR${NC}"
+echo ""
+echo -e "${GREEN}${BOLD}That is it. Go and talk to $AGENT_NAME.${NC}"

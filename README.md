@@ -26,6 +26,31 @@ Lola runs standalone with just Claude Code. Optionally, deploy her on [AI Maestr
 
 ## Quick Start
 
+**Paste this into Claude Code and you are done:**
+
+```
+Set me up with lolabot, a personal-assistant framework.
+
+1. Create a folder at ~/assistant and cd into it
+2. Clone https://github.com/23blocks-OS/lolabot.git into ~/lolabot
+3. Run ~/lolabot/setup.sh ~/assistant and answer its questions using sensible
+   defaults — ask me only for my name and what I want to call you
+4. Copy lolabot.yaml.example to lolabot.yaml in ~/assistant
+5. Tell me the single command I need to run next, and stop
+
+Do not configure email or anything requiring passwords. I will do that later.
+```
+
+Full instructions, a launcher for one-word startup, and troubleshooting: **[INSTALL.md](INSTALL.md)**.
+
+### What happens on first run
+
+Your assistant introduces itself and asks four questions — **what to call you, what its job is, what
+it should handle every week, and how you will know in six weeks whether it was worth it.** It writes
+your answers to `brain/charter.md` and into its own instructions, then gets to work.
+
+**Every question can be skipped.** Open with real work instead and it does that first.
+
 > **Optional:** For persistent memory, inter-agent messaging, and multi-machine orchestration, deploy Lola on [AI Maestro](https://github.com/23blocks-OS/ai-maestro).
 
 ```bash
@@ -90,6 +115,7 @@ your-assistant/          # Your PA instance (private, never pushed)
 | `file-processing` | Document classification, organization, indexing |
 | `mail-handler` | Safe email interaction rules and trust model |
 | `pa-memory-delegation` | User memory management (facts, events, learnings) |
+| `pa-onboarding` | First-run charter — name, role, standing work, how success is measured |
 
 ## Configuration
 
