@@ -41,6 +41,9 @@ Set me up with lolabot, a personal-assistant framework.
 Do not configure email or anything requiring passwords. I will do that later.
 ```
 
+**No terminal?** Claude Cowork and any assistant that can use folders can set it up for you —
+`setup.sh` only creates folders and writes files. See **[INSTALL.md](INSTALL.md)**.
+
 Full instructions, a launcher for one-word startup, and troubleshooting: **[INSTALL.md](INSTALL.md)**.
 
 ### What happens on first run
