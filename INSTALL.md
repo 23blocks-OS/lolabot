@@ -32,6 +32,56 @@ When it finishes, it will tell you to run one command. Run it. **That's the inst
 
 ---
 
+## No terminal: Claude Cowork, or any assistant that can use folders
+
+**`setup.sh` only creates folders and writes files.** Nothing about this framework needs a terminal —
+the script is a convenience, not a requirement. Any AI that can read a folder and write files can set
+it up for you.
+
+That includes **Claude Cowork** in the Claude desktop app, where you point Claude at a folder and it
+works inside it.
+
+> **Honest note:** we have tested the terminal path. We have **not** verified Cowork end to end, and
+> Anthropic's page does not say whether it can clone a repository. If yours cannot, download the repo
+> as a ZIP from the green **Code** button on
+> [the repo page](https://github.com/23blocks-OS/lolabot) and unzip it first. Everything after that
+> works the same.
+
+**Steps:**
+
+1. Get the framework onto your computer — clone it, or download and unzip it. Call that folder
+   `lolabot`.
+2. Make an empty folder next to it called `assistant`. **That folder is your assistant's home.**
+3. Point your assistant at both folders.
+4. Paste this:
+
+```
+Set up my personal assistant.
+
+You have two folders: "lolabot" (the framework) and "assistant" (empty).
+
+In "assistant", create these folders:
+  brain, memory, skills, tools, docs, articles, prompts, indexes
+
+Then:
+- Copy everything from lolabot/skills into assistant/skills
+- Copy everything from lolabot/tools into assistant/tools
+- Read lolabot/CLAUDE.TEMPLATE.md. Write assistant/CLAUDE.md from it, replacing
+  every {{PLACEHOLDER}}. Ask me only for my name and what to call you — use
+  sensible defaults for everything else, and delete sections that need tools
+  I have not set up.
+- Copy lolabot/lolabot.yaml.example to assistant/lolabot.yaml
+
+Then read assistant/skills/pa-onboarding/SKILL.md and follow it.
+
+Do not set up email or anything needing a password.
+```
+
+**From then on, work in the `assistant` folder.** That is where your assistant lives — its
+instructions, its memory, its notes.
+
+---
+
 ## The manual way
 
 If you would rather do it yourself:
