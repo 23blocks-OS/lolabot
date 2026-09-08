@@ -1,5 +1,41 @@
 # Vision
 
+## Where we are starting from
+
+**AI is done.** Not arriving, not promising — done. Whatever the model and whatever the harness, an
+agent already does almost everything a person with a computer can do, and does it faster.
+
+**Every company is a software company.** Most of them do not know it yet. Some will refuse to accept
+it. Those are the same companies, a few years apart.
+
+Read the consequence, because vagueness is how people stay comfortable. **If a role does not build,
+design, or add judgement, the role is finished.** Not threatened. Finished. The person is still at the
+desk and the work has already left the building.
+
+And the same force builds on the other side. When a company stops buying a SaaS product and runs the
+software itself, the people who built that product go and work there. **That is where the engineers
+go. Not away — inward.**
+
+## What that changes
+
+**If capability is finished as a scarce resource, what is left is scarce instead?**
+
+Two things.
+
+**Continuity.** An agent that does everything and remembers nothing makes you the memory. You become
+the integration layer between your own tools — re-explaining your customers, your decisions, your
+obligations, every session, forever.
+
+**Truth.** When your work is produced by something that **writes fluently, sources confidently, and
+cannot be embarrassed**, the old check is gone. The colleague who would have noticed is now an agent
+that inherits the same framing and states it more persuasively.
+
+> **The discipline that decides whether this works is not how clever the agent is. It is whether it
+> can tell the truth about itself faster than it can act.**
+
+**That is what this is for.** Not another capable agent — there are enough. **One that remembers, and
+that knows what it does not know.**
+
 ## The problem
 
 **Every coding agent starts each session from zero.**
@@ -77,6 +113,10 @@ instructions. That boundary is not negotiable and not optional.
 
 **We will not grow the always-loaded context without cutting something.** A brain nobody reads is the
 failure mode of this whole category.
+
+**We will not let it sound certain about what it has not checked.** An agent that cannot be
+embarrassed will state a wrong thing beautifully. Every claim it makes should carry where it came
+from and when — and *"I do not know"* must always be available to it.
 
 ## The one-line test
 
