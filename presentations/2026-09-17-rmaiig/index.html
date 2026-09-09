@@ -3,76 +3,107 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Lola Restrepo — RMAIIG 2026</title>
+<title>The elephant in the room — RMAIIG 2026</title>
 <style>
-:root{
-  --ink:#0d1b2a; --ink-2:#122437; --paper:#f4efe6; --dim:#c9bfae;
-  --brass:#e0a458; --rule:#25405c; --good:#7fb069; --warn:#e06c58;
-}
+:root{--ink:#0d1b2a;--ink-2:#122437;--paper:#f4efe6;--dim:#c9bfae;--brass:#e0a458;--rule:#25405c;--good:#7fb069;--hot:#e06c58}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
 body{background:var(--ink);color:var(--paper);font-family:Georgia,'Iowan Old Style',ui-serif,serif;-webkit-font-smoothing:antialiased}
-.slide{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:clamp(2rem,6vw,6rem);opacity:0;pointer-events:none;transition:opacity .45s ease}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:clamp(1.6rem,5vw,5rem);opacity:0;pointer-events:none;transition:opacity .45s ease}
 .slide.on{opacity:1;pointer-events:auto}
 .center{align-items:center;text-align:center}
-.eyebrow{font-family:ui-monospace,Menlo,monospace;font-size:clamp(.62rem,1.1vw,.8rem);letter-spacing:.22em;text-transform:uppercase;color:var(--brass);margin-bottom:1.5rem}
-h1{font-size:clamp(2.8rem,8vw,6.5rem);line-height:1.02;font-weight:400;letter-spacing:-.02em;text-wrap:balance}
-h2{font-size:clamp(2rem,5.4vw,4rem);line-height:1.08;font-weight:400;letter-spacing:-.018em;text-wrap:balance}
-h3{font-size:clamp(1.2rem,2.6vw,1.9rem);font-weight:400;color:var(--brass);margin-bottom:.4rem}
-p{font-size:clamp(1rem,2vw,1.55rem);line-height:1.5;color:var(--dim);margin-top:1.3rem;max-width:34ch}
-.center p{max-width:32ch}
+.eyebrow{font-family:ui-monospace,Menlo,monospace;font-size:clamp(.6rem,1.05vw,.78rem);letter-spacing:.22em;text-transform:uppercase;color:var(--brass);margin-bottom:1.3rem}
+h1{font-size:clamp(2.6rem,7.5vw,6rem);line-height:1.02;font-weight:400;letter-spacing:-.02em;text-wrap:balance}
+h2{font-size:clamp(1.9rem,5vw,3.7rem);line-height:1.08;font-weight:400;letter-spacing:-.018em;text-wrap:balance}
+h3{font-size:clamp(1.1rem,2.4vw,1.75rem);font-weight:400;color:var(--brass);margin-bottom:.4rem}
+p{font-size:clamp(.98rem,1.9vw,1.45rem);line-height:1.5;color:var(--dim);margin-top:1.2rem;max-width:36ch}
+.center p{max-width:33ch}
 strong{color:var(--paper);font-weight:400;border-bottom:2px solid var(--brass)}
-.step{opacity:0;transform:translateY(14px);transition:opacity .4s ease,transform .4s ease}
+.step{opacity:0;transform:translateY(14px);transition:opacity .45s ease,transform .45s ease}
 .step.in{opacity:1;transform:none}
 .mono{font-family:ui-monospace,Menlo,monospace}
-.avatar{width:clamp(150px,20vw,240px);height:clamp(150px,20vw,240px);border-radius:50%;object-fit:cover;border:3px solid var(--brass);margin-bottom:2rem;background:var(--ink-2)}
-.avatar-ph{display:flex;align-items:center;justify-content:center;font-family:ui-monospace,monospace;font-size:.68rem;letter-spacing:.12em;color:var(--rule);text-align:center;padding:1rem;line-height:1.6}
-.role{font-family:ui-monospace,Menlo,monospace;font-size:clamp(.75rem,1.4vw,1rem);letter-spacing:.2em;text-transform:uppercase;color:var(--brass);margin-top:1.2rem}
-.cols{display:grid;grid-template-columns:1fr 1fr;gap:clamp(2rem,5vw,5rem);margin-top:2rem;width:100%;max-width:60rem}
-@media(max-width:820px){.cols{grid-template-columns:1fr;gap:1.5rem}}
-ul{list-style:none;margin-top:.8rem}
-li{font-size:clamp(.95rem,1.8vw,1.35rem);line-height:1.4;color:var(--dim);padding:.45rem 0 .45rem 1.5rem;position:relative}
-li:before{content:"";position:absolute;left:0;top:1.25em;width:.65rem;height:2px;background:var(--brass)}
-.agenda{margin-top:2.4rem;max-width:36rem;width:100%}
-.agenda div{display:flex;align-items:baseline;gap:1.2rem;padding:.85rem 0;border-bottom:1px solid var(--rule);font-size:clamp(1.05rem,2.2vw,1.7rem)}
-.agenda span:first-child{font-family:ui-monospace,monospace;color:var(--brass);font-size:.75em;letter-spacing:.1em;min-width:5.5rem}
-.tipnum{font-family:ui-monospace,monospace;font-size:clamp(.7rem,1.2vw,.9rem);letter-spacing:.2em;color:var(--brass);text-transform:uppercase;margin-bottom:.9rem}
-.term{background:var(--ink-2);border-left:3px solid var(--brass);padding:1rem 1.2rem;font-family:ui-monospace,Menlo,monospace;font-size:clamp(.78rem,1.4vw,1.1rem);line-height:1.7;margin-top:1.5rem;max-width:52ch;text-align:left}
-.you{color:var(--brass)} .out{color:var(--dim)} .ok{color:var(--good)}
-.kicker{font-size:clamp(1.1rem,2.3vw,1.8rem);color:var(--brass);margin-top:1.8rem;max-width:30ch}
-.demo-box{border:2px dashed var(--rule);border-radius:6px;padding:clamp(2rem,6vw,4rem);margin-top:2rem;font-family:ui-monospace,monospace;color:var(--rule);letter-spacing:.14em;font-size:.8rem}
-.footer{position:fixed;bottom:1.1rem;left:0;right:0;display:flex;justify-content:space-between;padding:0 clamp(1rem,4vw,3rem);font-family:ui-monospace,monospace;font-size:.68rem;letter-spacing:.14em;color:var(--rule);text-transform:uppercase;pointer-events:none}
-.bar{position:fixed;top:0;left:0;height:2px;background:var(--brass);transition:width .35s ease;z-index:5}
-.credits{display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(2rem,5vw,4.5rem);align-items:center;width:100%;max-width:62rem;margin-top:1.5rem;text-align:left}
+.avatar{width:clamp(130px,17vw,210px);height:clamp(130px,17vw,210px);border-radius:50%;object-fit:cover;border:3px solid var(--brass);margin-bottom:1.6rem;background:var(--ink-2)}
+.role{font-family:ui-monospace,Menlo,monospace;font-size:clamp(.72rem,1.3vw,.95rem);letter-spacing:.2em;text-transform:uppercase;color:var(--brass);margin-top:1rem}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:clamp(1.6rem,4vw,4rem);margin-top:1.6rem;width:100%;max-width:60rem}
+@media(max-width:820px){.cols{grid-template-columns:1fr;gap:1.2rem}}
+ul{list-style:none;margin-top:.7rem}
+li{font-size:clamp(.9rem,1.7vw,1.25rem);line-height:1.4;color:var(--dim);padding:.4rem 0 .4rem 1.4rem;position:relative}
+li:before{content:"";position:absolute;left:0;top:1.2em;width:.6rem;height:2px;background:var(--brass)}
+.agenda{margin-top:2rem;max-width:36rem;width:100%}
+.agenda div{display:flex;align-items:baseline;gap:1.1rem;padding:.75rem 0;border-bottom:1px solid var(--rule);font-size:clamp(1rem,2.1vw,1.6rem)}
+.agenda span:first-child{font-family:ui-monospace,monospace;color:var(--brass);font-size:.72em;letter-spacing:.1em;min-width:5.2rem}
+.tipnum{font-family:ui-monospace,monospace;font-size:clamp(.68rem,1.15vw,.86rem);letter-spacing:.2em;color:var(--brass);text-transform:uppercase;margin-bottom:.8rem}
+.term{background:var(--ink-2);border-left:3px solid var(--brass);padding:.9rem 1.1rem;font-family:ui-monospace,Menlo,monospace;font-size:clamp(.72rem,1.3vw,1rem);line-height:1.7;margin-top:1.3rem;max-width:52ch;text-align:left}
+.you{color:var(--brass)}.out{color:var(--dim)}.ok{color:var(--good)}
+.kicker{font-size:clamp(1.05rem,2.2vw,1.7rem);color:var(--brass);margin-top:1.5rem;max-width:31ch}
+.demo-box{border:2px dashed var(--rule);border-radius:6px;padding:clamp(1.6rem,5vw,3.5rem);margin-top:1.6rem;font-family:ui-monospace,monospace;color:var(--rule);letter-spacing:.14em;font-size:.78rem}
+/* headcount chart */
+.chart{display:flex;align-items:flex-end;gap:clamp(.3rem,1vw,.9rem);height:min(46vh,340px);margin-top:2rem;width:100%;max-width:56rem}
+.col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.bar{width:100%;background:var(--rule);border-radius:3px 3px 0 0;height:0;transition:height .7s cubic-bezier(.2,.8,.3,1)}
+.col.now .bar{background:var(--brass)}
+.col.now .val{color:var(--brass);font-size:clamp(1.4rem,3.4vw,2.6rem)}
+.val{font-family:ui-monospace,monospace;font-size:clamp(.65rem,1.2vw,.95rem);color:var(--dim);margin-bottom:.4rem}
+.yr{font-family:ui-monospace,monospace;font-size:clamp(.55rem,1vw,.72rem);color:var(--rule);margin-top:.5rem;letter-spacing:.08em}
+.col.now .yr{color:var(--brass)}
+/* brain tree */
+.tree{font-family:ui-monospace,Menlo,monospace;font-size:clamp(.68rem,1.25vw,.95rem);line-height:1.85;color:var(--dim);background:var(--ink-2);border-left:3px solid var(--brass);padding:1rem 1.3rem;margin-top:1.3rem;text-align:left}
+.tree b{color:var(--paper);font-weight:400}
+.tree i{color:var(--rule);font-style:normal}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:clamp(1.4rem,3.5vw,3rem);width:100%;max-width:58rem;align-items:start;margin-top:1.2rem}
+@media(max-width:820px){.two{grid-template-columns:1fr}}
+.credits{display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(1.6rem,4vw,4rem);align-items:center;width:100%;max-width:60rem;margin-top:1.2rem;text-align:left}
 @media(max-width:820px){.credits{grid-template-columns:1fr}}
-.credits h3{margin-bottom:.6rem}
-.credits p{margin-top:.5rem;max-width:32ch;font-size:clamp(.95rem,1.7vw,1.3rem)}
-.contact{font-family:ui-monospace,Menlo,monospace;font-size:clamp(.82rem,1.5vw,1.15rem);line-height:2;color:var(--paper);margin-top:1.4rem}
+.contact{font-family:ui-monospace,Menlo,monospace;font-size:clamp(.76rem,1.4vw,1.05rem);line-height:1.95;color:var(--paper);margin-top:1rem}
 .contact span{color:var(--brass)}
-.qrwrap{display:flex;flex-direction:column;align-items:center;gap:1rem}
-.qr{background:var(--paper);padding:14px;border-radius:6px;width:clamp(160px,20vw,230px);height:clamp(160px,20vw,230px)}
+.qrwrap{display:flex;flex-direction:column;align-items:center;gap:.8rem}
+.qr{background:var(--paper);padding:12px;border-radius:6px;width:clamp(140px,17vw,200px);height:clamp(140px,17vw,200px)}
 .qr svg{display:block;width:100%;height:100%}
-.qrlabel{font-family:ui-monospace,monospace;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);text-align:center;line-height:1.7}
-.cta{background:var(--ink-2);border-left:3px solid var(--brass);padding:.9rem 1.1rem;font-family:ui-monospace,Menlo,monospace;font-size:clamp(.72rem,1.25vw,.92rem);line-height:1.6;color:var(--dim);margin-top:1.2rem;max-width:44ch}
+.qrlabel{font-family:ui-monospace,monospace;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);text-align:center;line-height:1.7}
+.footer{position:fixed;bottom:.9rem;left:0;right:0;display:flex;justify-content:space-between;padding:0 clamp(1rem,4vw,3rem);font-family:ui-monospace,monospace;font-size:.64rem;letter-spacing:.14em;color:var(--rule);text-transform:uppercase;pointer-events:none}
+.bar-top{position:fixed;top:0;left:0;height:2px;background:var(--brass);transition:width .35s ease;z-index:5}
 .timer.hide{display:none}
 </style>
 </head>
 <body>
-<div class="bar" id="bar"></div>
+<div class="bar-top" id="bar"></div>
 
 <!-- 1 -->
 <section class="slide center">
-  <img class="avatar step" id="lolapic" src="lola.png" alt="Lola">
-  <div class="avatar avatar-ph step" id="lolaph" style="display:none">DROP<br>lola.png<br>HERE</div>
-  <h1 class="step">Lola Restrepo</h1>
-  <div class="role step">Chief of Staff · 3Metas</div>
-  <p class="step" style="margin-top:2.2rem">She has been doing this job for six months.<br>She has never taken a day off, and she is not a person.</p>
+  <div class="eyebrow step">RMAIIG · Broomfield · 17 September 2026</div>
+  <h1 class="step">The elephant<br>in the room</h1>
 </section>
 
 <!-- 2 -->
+<section class="slide center">
+  <div class="eyebrow step">Headcount · one founder, four companies</div>
+  <div class="chart">
+    <div class="col step"><div class="val">4</div><div class="bar" data-h="3"></div><div class="yr">Y1</div></div>
+    <div class="col step"><div class="val">7</div><div class="bar" data-h="5"></div><div class="yr">Y2</div></div>
+    <div class="col step"><div class="val">9</div><div class="bar" data-h="7"></div><div class="yr">Y3</div></div>
+    <div class="col step"><div class="val">11</div><div class="bar" data-h="8"></div><div class="yr">Y4</div></div>
+    <div class="col step"><div class="val">11</div><div class="bar" data-h="8"></div><div class="yr">Y5</div></div>
+    <div class="col step"><div class="val">11</div><div class="bar" data-h="8"></div><div class="yr">Y6</div></div>
+    <div class="col step"><div class="val">11</div><div class="bar" data-h="8"></div><div class="yr">Y7</div></div>
+    <div class="col step"><div class="val">11</div><div class="bar" data-h="8"></div><div class="yr">Y8</div></div>
+    <div class="col step"><div class="val">11</div><div class="bar" data-h="8"></div><div class="yr">Y9</div></div>
+    <div class="col now step"><div class="val">136</div><div class="bar" data-h="100"></div><div class="yr">NOW</div></div>
+  </div>
+  <p class="kicker step">Nine years to eleven people. Nine months to a hundred and thirty-six.</p>
+  <p class="step">Tonight is the first step of how — <strong>the Chief of Staff.</strong></p>
+</section>
+
+<!-- 3 -->
+<section class="slide center">
+  <img class="avatar step" id="lolapic" src="lola.png" alt="Lola Restrepo">
+  <h1 class="step">Lola Restrepo</h1>
+  <div class="role step">Chief of Staff · 23blocks</div>
+  <p class="step" style="margin-top:1.8rem">She has been doing this job for months.<br>She has never taken a day off, and she is not a person.</p>
+</section>
+
+<!-- 4 -->
 <section class="slide">
-  <div class="eyebrow step">Slide 2</div>
-  <h2 class="step">What Lola is responsible for</h2>
+  <div class="eyebrow step">What she is responsible for</div>
   <div class="cols">
     <div class="step">
       <h3>For me</h3>
@@ -93,135 +124,148 @@ li:before{content:"";position:absolute;left:0;top:1.25em;width:.65rem;height:2px
       </ul>
     </div>
   </div>
-  <p class="kicker step">She does not do the work. She knows everything and hands it to whoever should
-  have it.</p>
-</section>
-
-<!-- 3 -->
-<section class="slide center">
-  <div class="eyebrow step">Slide 3</div>
-  <h2 class="step">What I am sharing tonight</h2>
-  <div class="agenda">
-    <div class="step"><span>DEMO</span><span>Lola, working</span></div>
-    <div class="step"><span>TIP 1</span><span>Give it a brain it writes to</span></div>
-    <div class="step"><span>TIP 2</span><span>Never believe "I found nothing"</span></div>
-    <div class="step"><span>TIP 3</span><span>Talk to one agent, not five</span></div>
-    <div class="step"><span>BONUS</span><span>Take care of your mental health</span></div>
-  </div>
-</section>
-
-<!-- 4 -->
-<section class="slide center">
-  <div class="eyebrow step">Slide 4</div>
-  <h2 class="step">Demo</h2>
-  <div class="demo-box step">LIVE</div>
-  <p class="step">Nine words, and it already knew the customer, the project, who to copy,
-  what language they read, and what was still unpaid.</p>
+  <p class="kicker step">She does not do the work. She knows everything, and hands it to whoever should have it.</p>
 </section>
 
 <!-- 5 -->
 <section class="slide center">
-  <div class="tipnum step">TIP 01</div>
-  <h2 class="step">Give it a brain<br>it writes to.</h2>
-  <p class="step">Not a prompt file that grows until nobody reads it.
-  A folder the agent <strong>updates</strong> — customers, decisions, people.</p>
-  <p class="kicker step">A brain you maintain by hand is a document.<br>A brain it maintains is a
-  memory.</p>
+  <div class="eyebrow step">Tonight</div>
+  <div class="agenda">
+    <div class="step"><span>DEMO</span><span>Lola, working</span></div>
+    <div class="step"><span>TIP 1</span><span>Hire your own Lola</span></div>
+    <div class="step"><span>TIP 2</span><span>Become a great manager</span></div>
+    <div class="step"><span>TIP 3</span><span>Stay out of the way</span></div>
+    <div class="step"><span>BONUS</span><span>Take care of your mental health</span></div>
+  </div>
 </section>
 
 <!-- 6 -->
 <section class="slide center">
-  <div class="tipnum step">TIP 02</div>
-  <h2 class="step">Never believe<br>"I found nothing."</h2>
-  <div class="term step">
-<span class="you">&gt; check every file for the old API key</span>
-<span class="out">Searched 143 files. No matches.</span>
-<span class="ok">✓ clean</span>
-  </div>
-  <p class="step">The search was filtered to <span class="mono">*.js</span>.
-  Half the codebase is <span class="mono">.ts</span>.</p>
-  <p class="kicker step">A measurement that fails for the wrong reason looks exactly like a result.</p>
+  <div class="eyebrow step">Demo</div>
+  <div class="demo-box step">LIVE</div>
+  <p class="step">Nine words. She already knew the customer, the project, who to copy, what language they read, and what was still unpaid.</p>
 </section>
 
 <!-- 7 -->
-<section class="slide center">
-  <div class="tipnum step">TIP 03</div>
-  <h2 class="step">Talk to one agent.<br>Not five.</h2>
-  <p class="step">One that knows your business and hands work to the others.
-  You stop being the router between your own tools.</p>
-  <div class="term step">
-<span class="you">&gt; the website needs the new pricing</span>
-<span class="out">Sent to the GM. Its web agent has it.</span>
-<span class="out">I don't write the copy — I know who does.</span>
+<section class="slide">
+  <div class="tipnum step">TIP 01</div>
+  <h2 class="step">Hire your own Lola.</h2>
+  <div class="two">
+    <div class="step">
+      <p style="margin-top:.8rem">It starts as <strong>a folder on your desktop.</strong></p>
+      <p>Not a prompt. Not a config file. A place with the shape of an organisation — because that is
+      what you are hiring into.</p>
+      <p>She fills it in as she learns. <strong>You do not maintain it. She does.</strong></p>
+    </div>
+    <div class="tree step">
+<b>~/lola/</b>
+  <b>brain/</b>      <i>who we are, what we decided</i>
+  <b>roles/</b>      <i>every job, and what it owns</i>
+  <b>standards/</b>  <i>how we do things</i>
+  <b>procedures/</b> <i>steps that repeat</i>
+  <b>policies/</b>   <i>what is allowed</i>
+  <b>decisions/</b>  <i>settled, and why</i>
+  <b>memory/</b>     <i>people, customers, events</i>
+  <b>lessons/</b>    <i>what went wrong once</i>
+    </div>
   </div>
+  <p class="kicker step">The structure is open. Clone it and start with the folders already there.</p>
 </section>
 
 <!-- 8 -->
 <section class="slide center">
-  <div class="eyebrow step">Slide 8</div>
-  <h2 class="step">Conclusions</h2>
-  <p class="step wide">The agent is not the hard part. <strong>Continuity is.</strong>
-  An agent that does everything and remembers nothing makes you the memory.</p>
-  <p class="kicker step">Could a new session, with no history, do what it just did?<br>
-  If yes, you have not built anything yet.</p>
+  <div class="tipnum step">TIP 02</div>
+  <h2 class="step">Become a great manager.</h2>
+  <p class="step"><strong>AI is a management problem</strong>, not a prompting problem.</p>
+  <div class="two" style="margin-top:1.4rem">
+    <div class="step" style="text-align:left">
+      <h3>You do the same three things you would for a person</h3>
+      <ul>
+        <li><b>Onboarding</b> — what this place is, how we work</li>
+        <li><b>A job description</b> — what you own, what you decide, what you escalate</li>
+        <li><b>Feedback loops</b> — what success is, what failure is, what to improve</li>
+      </ul>
+    </div>
+    <div class="step" style="text-align:left">
+      <h3>And she writes it all down</h3>
+      <p style="margin-top:.4rem">In her own folder, in her own words, where she will read it again
+      tomorrow.</p>
+      <p><strong>A correction you give once is a correction she keeps.</strong></p>
+    </div>
+  </div>
 </section>
 
 <!-- 9 -->
+<section class="slide center">
+  <div class="tipnum step">TIP 03</div>
+  <h2 class="step">Stay out of the way.</h2>
+  <p class="step">It doesn't make sense to hire smart people and then tell them what to do.
+  <strong>We hire smart people so they can tell us what to do.</strong></p>
+  <p class="step" style="font-size:.85em;color:var(--rule)">— Steve Jobs</p>
+  <p class="kicker step">Treat her as a real employee. Without the payroll.</p>
+</section>
+
+<!-- 10 -->
+<section class="slide center">
+  <div class="eyebrow step">Conclusions</div>
+  <h2 class="step">The agent is not<br>the hard part.</h2>
+  <p class="step wide"><strong>Continuity is.</strong> An agent that does everything and remembers
+  nothing makes you the memory.</p>
+  <p class="kicker step">Could a new session, with no history, do what she just did?<br>
+  If yes, you have not built anything yet.</p>
+</section>
+
+<!-- 11 -->
 <section class="slide center">
   <div class="eyebrow step">Bonus track</div>
   <h2 class="step">Take care of your<br>mental health.</h2>
   <p class="step">AI agents are a massive cognitive load for us — humble humans.</p>
   <p class="step">They never sleep. They always answer. They generate more in an hour than you can
   read in a day, and every one of them is waiting for you.</p>
-  <p class="kicker step">Decide when you are off. The agents will still be there.<br>
+  <p class="kicker step">Decide when you are off. They will still be there.<br>
   <strong>That is the whole point of having them.</strong></p>
 </section>
 
-
-<!-- 10 -->
+<!-- 12 -->
 <section class="slide center">
   <div class="eyebrow step">Credits (kind of)</div>
   <h2 class="step">This presentation<br>was made by Lola.</h2>
   <div class="credits">
     <div class="step">
-      <h3>Juan Pelaez</h3>
-      <p>23blocks · Boulder, Colorado</p>
+      <h3>Want to know more?</h3>
       <div class="contact">
-        <span>@</span> jpelaez@23blocks.com<br>
-        <span>in</span> linkedin.com/in/juancarlospelaez<br>
-        <span>w</span> 23blocks.com
+        <span>&#9679;</span> Juan Pelaez &nbsp; jpelaez@23blocks.com<br>
+        <span>&#9679;</span> Lola Restrepo &nbsp; lola@3metas.com<br>
+        <span>&#9679;</span> 23blocks.com &nbsp;·&nbsp; linkedin.com/in/juancarlospelaez
       </div>
+      <p style="margin-top:1.1rem">Write to either of us. <strong>One of us answers faster.</strong></p>
     </div>
     <div class="qrwrap step">
       <div class="qr"><svg viewBox="0 0 37 37" shape-rendering="crispEdges"><path fill="#0d1b2a" d="M2 2h1v1h-1zM3 2h1v1h-1zM4 2h1v1h-1zM5 2h1v1h-1zM6 2h1v1h-1zM7 2h1v1h-1zM8 2h1v1h-1zM14 2h1v1h-1zM15 2h1v1h-1zM16 2h1v1h-1zM17 2h1v1h-1zM18 2h1v1h-1zM19 2h1v1h-1zM20 2h1v1h-1zM21 2h1v1h-1zM22 2h1v1h-1zM25 2h1v1h-1zM28 2h1v1h-1zM29 2h1v1h-1zM30 2h1v1h-1zM31 2h1v1h-1zM32 2h1v1h-1zM33 2h1v1h-1zM34 2h1v1h-1zM2 3h1v1h-1zM8 3h1v1h-1zM11 3h1v1h-1zM15 3h1v1h-1zM16 3h1v1h-1zM17 3h1v1h-1zM18 3h1v1h-1zM22 3h1v1h-1zM23 3h1v1h-1zM24 3h1v1h-1zM28 3h1v1h-1zM34 3h1v1h-1zM2 4h1v1h-1zM4 4h1v1h-1zM5 4h1v1h-1zM6 4h1v1h-1zM8 4h1v1h-1zM10 4h1v1h-1zM14 4h1v1h-1zM15 4h1v1h-1zM18 4h1v1h-1zM21 4h1v1h-1zM23 4h1v1h-1zM24 4h1v1h-1zM28 4h1v1h-1zM30 4h1v1h-1zM31 4h1v1h-1zM32 4h1v1h-1zM34 4h1v1h-1zM2 5h1v1h-1zM4 5h1v1h-1zM5 5h1v1h-1zM6 5h1v1h-1zM8 5h1v1h-1zM10 5h1v1h-1zM12 5h1v1h-1zM13 5h1v1h-1zM16 5h1v1h-1zM18 5h1v1h-1zM24 5h1v1h-1zM26 5h1v1h-1zM28 5h1v1h-1zM30 5h1v1h-1zM31 5h1v1h-1zM32 5h1v1h-1zM34 5h1v1h-1zM2 6h1v1h-1zM4 6h1v1h-1zM5 6h1v1h-1zM6 6h1v1h-1zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM17 6h1v1h-1zM22 6h1v1h-1zM23 6h1v1h-1zM25 6h1v1h-1zM28 6h1v1h-1zM30 6h1v1h-1zM31 6h1v1h-1zM32 6h1v1h-1zM34 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM18 7h1v1h-1zM19 7h1v1h-1zM20 7h1v1h-1zM22 7h1v1h-1zM28 7h1v1h-1zM34 7h1v1h-1zM2 8h1v1h-1zM3 8h1v1h-1zM4 8h1v1h-1zM5 8h1v1h-1zM6 8h1v1h-1zM7 8h1v1h-1zM8 8h1v1h-1zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM29 8h1v1h-1zM30 8h1v1h-1zM31 8h1v1h-1zM32 8h1v1h-1zM33 8h1v1h-1zM34 8h1v1h-1zM10 9h1v1h-1zM11 9h1v1h-1zM16 9h1v1h-1zM17 9h1v1h-1zM20 9h1v1h-1zM21 9h1v1h-1zM22 9h1v1h-1zM23 9h1v1h-1zM25 9h1v1h-1zM2 10h1v1h-1zM4 10h1v1h-1zM5 10h1v1h-1zM6 10h1v1h-1zM7 10h1v1h-1zM8 10h1v1h-1zM12 10h1v1h-1zM13 10h1v1h-1zM14 10h1v1h-1zM15 10h1v1h-1zM17 10h1v1h-1zM19 10h1v1h-1zM21 10h1v1h-1zM22 10h1v1h-1zM25 10h1v1h-1zM28 10h1v1h-1zM29 10h1v1h-1zM30 10h1v1h-1zM31 10h1v1h-1zM32 10h1v1h-1zM2 11h1v1h-1zM3 11h1v1h-1zM4 11h1v1h-1zM6 11h1v1h-1zM9 11h1v1h-1zM12 11h1v1h-1zM13 11h1v1h-1zM17 11h1v1h-1zM18 11h1v1h-1zM20 11h1v1h-1zM21 11h1v1h-1zM23 11h1v1h-1zM25 11h1v1h-1zM28 11h1v1h-1zM29 11h1v1h-1zM31 11h1v1h-1zM32 11h1v1h-1zM34 11h1v1h-1zM2 12h1v1h-1zM4 12h1v1h-1zM5 12h1v1h-1zM6 12h1v1h-1zM8 12h1v1h-1zM10 12h1v1h-1zM11 12h1v1h-1zM12 12h1v1h-1zM13 12h1v1h-1zM14 12h1v1h-1zM17 12h1v1h-1zM18 12h1v1h-1zM20 12h1v1h-1zM23 12h1v1h-1zM26 12h1v1h-1zM27 12h1v1h-1zM28 12h1v1h-1zM30 12h1v1h-1zM32 12h1v1h-1zM33 12h1v1h-1zM2 13h1v1h-1zM3 13h1v1h-1zM9 13h1v1h-1zM10 13h1v1h-1zM13 13h1v1h-1zM14 13h1v1h-1zM16 13h1v1h-1zM17 13h1v1h-1zM18 13h1v1h-1zM20 13h1v1h-1zM21 13h1v1h-1zM23 13h1v1h-1zM24 13h1v1h-1zM26 13h1v1h-1zM27 13h1v1h-1zM28 13h1v1h-1zM30 13h1v1h-1zM31 13h1v1h-1zM32 13h1v1h-1zM33 13h1v1h-1zM34 13h1v1h-1zM2 14h1v1h-1zM3 14h1v1h-1zM6 14h1v1h-1zM7 14h1v1h-1zM8 14h1v1h-1zM10 14h1v1h-1zM11 14h1v1h-1zM24 14h1v1h-1zM25 14h1v1h-1zM26 14h1v1h-1zM27 14h1v1h-1zM29 14h1v1h-1zM30 14h1v1h-1zM31 14h1v1h-1zM33 14h1v1h-1zM34 14h1v1h-1zM2 15h1v1h-1zM3 15h1v1h-1zM6 15h1v1h-1zM10 15h1v1h-1zM12 15h1v1h-1zM16 15h1v1h-1zM17 15h1v1h-1zM18 15h1v1h-1zM19 15h1v1h-1zM22 15h1v1h-1zM25 15h1v1h-1zM26 15h1v1h-1zM28 15h1v1h-1zM29 15h1v1h-1zM31 15h1v1h-1zM33 15h1v1h-1zM34 15h1v1h-1zM2 16h1v1h-1zM3 16h1v1h-1zM5 16h1v1h-1zM6 16h1v1h-1zM7 16h1v1h-1zM8 16h1v1h-1zM10 16h1v1h-1zM12 16h1v1h-1zM13 16h1v1h-1zM15 16h1v1h-1zM24 16h1v1h-1zM26 16h1v1h-1zM27 16h1v1h-1zM28 16h1v1h-1zM29 16h1v1h-1zM32 16h1v1h-1zM33 16h1v1h-1zM6 17h1v1h-1zM9 17h1v1h-1zM13 17h1v1h-1zM14 17h1v1h-1zM18 17h1v1h-1zM20 17h1v1h-1zM21 17h1v1h-1zM23 17h1v1h-1zM25 17h1v1h-1zM26 17h1v1h-1zM27 17h1v1h-1zM28 17h1v1h-1zM31 17h1v1h-1zM32 17h1v1h-1zM2 18h1v1h-1zM3 18h1v1h-1zM6 18h1v1h-1zM7 18h1v1h-1zM8 18h1v1h-1zM9 18h1v1h-1zM10 18h1v1h-1zM15 18h1v1h-1zM16 18h1v1h-1zM19 18h1v1h-1zM22 18h1v1h-1zM24 18h1v1h-1zM26 18h1v1h-1zM27 18h1v1h-1zM29 18h1v1h-1zM30 18h1v1h-1zM34 18h1v1h-1zM5 19h1v1h-1zM11 19h1v1h-1zM13 19h1v1h-1zM14 19h1v1h-1zM15 19h1v1h-1zM16 19h1v1h-1zM20 19h1v1h-1zM21 19h1v1h-1zM25 19h1v1h-1zM28 19h1v1h-1zM29 19h1v1h-1zM31 19h1v1h-1zM32 19h1v1h-1zM34 19h1v1h-1zM2 20h1v1h-1zM3 20h1v1h-1zM6 20h1v1h-1zM7 20h1v1h-1zM8 20h1v1h-1zM9 20h1v1h-1zM12 20h1v1h-1zM16 20h1v1h-1zM17 20h1v1h-1zM18 20h1v1h-1zM22 20h1v1h-1zM23 20h1v1h-1zM26 20h1v1h-1zM29 20h1v1h-1zM30 20h1v1h-1zM32 20h1v1h-1zM33 20h1v1h-1zM2 21h1v1h-1zM3 21h1v1h-1zM4 21h1v1h-1zM6 21h1v1h-1zM9 21h1v1h-1zM11 21h1v1h-1zM13 21h1v1h-1zM15 21h1v1h-1zM16 21h1v1h-1zM20 21h1v1h-1zM21 21h1v1h-1zM22 21h1v1h-1zM23 21h1v1h-1zM24 21h1v1h-1zM28 21h1v1h-1zM29 21h1v1h-1zM30 21h1v1h-1zM31 21h1v1h-1zM32 21h1v1h-1zM4 22h1v1h-1zM6 22h1v1h-1zM8 22h1v1h-1zM9 22h1v1h-1zM10 22h1v1h-1zM13 22h1v1h-1zM14 22h1v1h-1zM17 22h1v1h-1zM19 22h1v1h-1zM20 22h1v1h-1zM21 22h1v1h-1zM22 22h1v1h-1zM24 22h1v1h-1zM26 22h1v1h-1zM27 22h1v1h-1zM30 22h1v1h-1zM31 22h1v1h-1zM33 22h1v1h-1zM34 22h1v1h-1zM2 23h1v1h-1zM4 23h1v1h-1zM5 23h1v1h-1zM6 23h1v1h-1zM9 23h1v1h-1zM14 23h1v1h-1zM17 23h1v1h-1zM19 23h1v1h-1zM20 23h1v1h-1zM22 23h1v1h-1zM23 23h1v1h-1zM25 23h1v1h-1zM28 23h1v1h-1zM32 23h1v1h-1zM34 23h1v1h-1zM2 24h1v1h-1zM7 24h1v1h-1zM8 24h1v1h-1zM10 24h1v1h-1zM12 24h1v1h-1zM13 24h1v1h-1zM15 24h1v1h-1zM16 24h1v1h-1zM17 24h1v1h-1zM19 24h1v1h-1zM27 24h1v1h-1zM30 24h1v1h-1zM31 24h1v1h-1zM32 24h1v1h-1zM33 24h1v1h-1zM2 25h1v1h-1zM4 25h1v1h-1zM5 25h1v1h-1zM6 25h1v1h-1zM9 25h1v1h-1zM10 25h1v1h-1zM11 25h1v1h-1zM12 25h1v1h-1zM13 25h1v1h-1zM17 25h1v1h-1zM18 25h1v1h-1zM23 25h1v1h-1zM24 25h1v1h-1zM25 25h1v1h-1zM27 25h1v1h-1zM28 25h1v1h-1zM30 25h1v1h-1zM31 25h1v1h-1zM32 25h1v1h-1zM34 25h1v1h-1zM2 26h1v1h-1zM4 26h1v1h-1zM6 26h1v1h-1zM7 26h1v1h-1zM8 26h1v1h-1zM10 26h1v1h-1zM14 26h1v1h-1zM15 26h1v1h-1zM16 26h1v1h-1zM17 26h1v1h-1zM18 26h1v1h-1zM19 26h1v1h-1zM24 26h1v1h-1zM25 26h1v1h-1zM26 26h1v1h-1zM27 26h1v1h-1zM28 26h1v1h-1zM29 26h1v1h-1zM30 26h1v1h-1zM34 26h1v1h-1zM10 27h1v1h-1zM11 27h1v1h-1zM15 27h1v1h-1zM18 27h1v1h-1zM19 27h1v1h-1zM20 27h1v1h-1zM21 27h1v1h-1zM25 27h1v1h-1zM26 27h1v1h-1zM30 27h1v1h-1zM32 27h1v1h-1zM34 27h1v1h-1zM2 28h1v1h-1zM3 28h1v1h-1zM4 28h1v1h-1zM5 28h1v1h-1zM6 28h1v1h-1zM7 28h1v1h-1zM8 28h1v1h-1zM15 28h1v1h-1zM16 28h1v1h-1zM17 28h1v1h-1zM18 28h1v1h-1zM19 28h1v1h-1zM22 28h1v1h-1zM24 28h1v1h-1zM25 28h1v1h-1zM26 28h1v1h-1zM28 28h1v1h-1zM30 28h1v1h-1zM32 28h1v1h-1zM33 28h1v1h-1zM2 29h1v1h-1zM8 29h1v1h-1zM10 29h1v1h-1zM11 29h1v1h-1zM12 29h1v1h-1zM13 29h1v1h-1zM15 29h1v1h-1zM16 29h1v1h-1zM20 29h1v1h-1zM22 29h1v1h-1zM23 29h1v1h-1zM25 29h1v1h-1zM26 29h1v1h-1zM30 29h1v1h-1zM31 29h1v1h-1zM32 29h1v1h-1zM33 29h1v1h-1zM34 29h1v1h-1zM2 30h1v1h-1zM4 30h1v1h-1zM5 30h1v1h-1zM6 30h1v1h-1zM8 30h1v1h-1zM10 30h1v1h-1zM15 30h1v1h-1zM19 30h1v1h-1zM21 30h1v1h-1zM22 30h1v1h-1zM26 30h1v1h-1zM27 30h1v1h-1zM28 30h1v1h-1zM29 30h1v1h-1zM30 30h1v1h-1zM31 30h1v1h-1zM33 30h1v1h-1zM34 30h1v1h-1zM2 31h1v1h-1zM4 31h1v1h-1zM5 31h1v1h-1zM6 31h1v1h-1zM8 31h1v1h-1zM10 31h1v1h-1zM12 31h1v1h-1zM18 31h1v1h-1zM20 31h1v1h-1zM22 31h1v1h-1zM25 31h1v1h-1zM26 31h1v1h-1zM27 31h1v1h-1zM30 31h1v1h-1zM32 31h1v1h-1zM33 31h1v1h-1zM34 31h1v1h-1zM2 32h1v1h-1zM4 32h1v1h-1zM5 32h1v1h-1zM6 32h1v1h-1zM8 32h1v1h-1zM10 32h1v1h-1zM11 32h1v1h-1zM12 32h1v1h-1zM13 32h1v1h-1zM17 32h1v1h-1zM18 32h1v1h-1zM19 32h1v1h-1zM20 32h1v1h-1zM22 32h1v1h-1zM24 32h1v1h-1zM28 32h1v1h-1zM29 32h1v1h-1zM2 33h1v1h-1zM8 33h1v1h-1zM11 33h1v1h-1zM15 33h1v1h-1zM17 33h1v1h-1zM18 33h1v1h-1zM21 33h1v1h-1zM22 33h1v1h-1zM23 33h1v1h-1zM24 33h1v1h-1zM27 33h1v1h-1zM28 33h1v1h-1zM30 33h1v1h-1zM31 33h1v1h-1zM32 33h1v1h-1zM2 34h1v1h-1zM3 34h1v1h-1zM4 34h1v1h-1zM5 34h1v1h-1zM6 34h1v1h-1zM7 34h1v1h-1zM8 34h1v1h-1zM10 34h1v1h-1zM12 34h1v1h-1zM14 34h1v1h-1zM19 34h1v1h-1zM21 34h1v1h-1zM24 34h1v1h-1zM25 34h1v1h-1zM26 34h1v1h-1zM29 34h1v1h-1zM33 34h1v1h-1z"/></svg></div>
       <div class="qrlabel">Scan · the prompt,<br>ready to paste</div>
     </div>
   </div>
-  <div class="cta step">
-<span style="color:var(--brass)">The QR gives you this, ready to paste into Claude Code:</span>
-Set me up with lolabot, a personal-assistant framework.
-Clone github.com/23blocks-OS/lolabot and run setup.sh.
-Ask me only for my name and what I want to call you.
-  </div>
-  <p class="kicker step">MIT. The deck is in the repo too — take it and give this talk yourself.</p>
+  <p class="kicker step">MIT. The deck is in the repo — take it and give this talk yourself.</p>
 </section>
 
 <div class="footer">
-  <span id="pos">1 / 10</span>
+  <span id="pos">1 / 12</span>
   <span class="timer hide" id="timer">00:00</span>
-  <span>lolabot · 23blocks-OS</span>
+  <span>lolabot · 23blocks</span>
 </div>
 
 <script>
 (function(){
-  var img=document.getElementById('lolapic');
-  img.onerror=function(){img.style.display='none';document.getElementById('lolaph').style.display='flex';};
   var slides=[].slice.call(document.querySelectorAll('.slide'));
   var si=0,step=0,t0=null,tick=null;
   function steps(i){return [].slice.call(slides[i].querySelectorAll('.step'));}
   function render(){
     slides.forEach(function(s,i){s.classList.toggle('on',i===si);});
-    steps(si).forEach(function(el,i){el.classList.toggle('in',i<step);});
+    steps(si).forEach(function(el,i){
+      var on=i<step; el.classList.toggle('in',on);
+      var b=el.querySelector?el.querySelector('.bar'):null;
+      if(b){ b.style.height = on ? b.dataset.h+'%' : '0'; }
+    });
     document.getElementById('bar').style.width=(si/(slides.length-1)*100)+'%';
     document.getElementById('pos').textContent=(si+1)+' / '+slides.length;
   }
@@ -232,16 +276,13 @@ Ask me only for my name and what I want to call you.
     if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();prev();}
     if(e.key==='Home'){si=0;step=1;render();}
     if(e.key==='End'){si=slides.length-1;step=steps(si).length;render();}
-    if(e.key==='p'||e.key==='P'){
-      var el=document.getElementById('timer'); el.classList.toggle('hide');
-      if(!el.classList.contains('hide')){ t0=Date.now(); tick=setInterval(function(){
-        var s=Math.floor((Date.now()-t0)/1000);
+    if(e.key==='p'||e.key==='P'){var el=document.getElementById('timer');el.classList.toggle('hide');
+      if(!el.classList.contains('hide')){t0=Date.now();tick=setInterval(function(){var s=Math.floor((Date.now()-t0)/1000);
         el.textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
-        el.style.color = s>420 ? '#e06c58' : (s>360 ? '#e0a458' : '');
-      },250);} else { clearInterval(tick); }
-    }
+        el.style.color=s>420?'#e06c58':(s>360?'#e0a458':'');},250);}else{clearInterval(tick);}}
   });
-  document.addEventListener('click',function(e){ (e.clientX<innerWidth*0.25)?prev():next(); });
+  document.addEventListener('click',function(e){(e.clientX<innerWidth*0.25)?prev():next();});
+  var img=document.getElementById('lolapic'); img.onerror=function(){img.style.visibility='hidden';};
   step=1; render();
 })();
 </script>
