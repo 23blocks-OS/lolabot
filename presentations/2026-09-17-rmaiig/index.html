@@ -62,6 +62,13 @@ li:before{content:"";position:absolute;left:0;top:1.2em;width:.6rem;height:2px;b
 .qrlabel{font-family:ui-monospace,monospace;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);text-align:center;line-height:1.7}
 .footer{position:fixed;bottom:.9rem;left:0;right:0;display:flex;justify-content:space-between;padding:0 clamp(1rem,4vw,3rem);font-family:ui-monospace,monospace;font-size:.64rem;letter-spacing:.14em;color:var(--rule);text-transform:uppercase;pointer-events:none}
 .bar-top{position:fixed;top:0;left:0;height:2px;background:var(--brass);transition:width .35s ease;z-index:5}
+.adbox{background:var(--brass);color:var(--ink);border-radius:8px;padding:clamp(1.4rem,3.6vw,2.6rem) clamp(1.6rem,4vw,3.4rem);margin-top:2rem;max-width:44rem;width:100%;box-shadow:0 14px 40px rgba(0,0,0,.35);text-align:center}
+.ad-top{font-family:ui-monospace,Menlo,monospace;font-size:clamp(.68rem,1.3vw,.92rem);letter-spacing:.24em;text-transform:uppercase;opacity:.72}
+.ad-head{font-size:clamp(1.5rem,3.6vw,2.6rem);line-height:1.12;margin:.5rem 0 .2rem;font-weight:400}
+.ad-sub{font-size:clamp(.9rem,1.7vw,1.2rem);opacity:.78;margin-bottom:1rem}
+.ad-num{font-family:ui-monospace,Menlo,monospace;font-size:clamp(1.9rem,5.6vw,4rem);letter-spacing:-.02em;line-height:1;font-weight:700}
+.ad-real{font-family:ui-monospace,Menlo,monospace;font-size:clamp(.9rem,1.9vw,1.35rem);margin-top:.5rem;opacity:.82}
+.ad-fine{font-size:clamp(.6rem,1.1vw,.76rem);opacity:.6;margin-top:1rem;line-height:1.5;max-width:36ch;margin-left:auto;margin-right:auto}
 .timer.hide{display:none}
 </style>
 </head>
@@ -248,8 +255,23 @@ li:before{content:"";position:absolute;left:0;top:1.2em;width:.6rem;height:2px;b
   <p class="kicker step">MIT. The deck is in the repo — take it and give this talk yourself.</p>
 </section>
 
+
+<!-- 13 -->
+<section class="slide center">
+  <h1 class="step">Questions</h1>
+  <div class="adbox step">
+    <div class="ad-top">&#9742; &nbsp; AI Emergency?</div>
+    <div class="ad-head">Need help with your<br>AI implementation?</div>
+    <div class="ad-sub">Operators standing by. One of them is real.</div>
+    <div class="ad-num">CALL 9-JUAN-JUAN</div>
+    <div class="ad-real">(954) 451-8791</div>
+    <div class="ad-fine">Available during business hours, and also not during business hours,
+    because one of us does not sleep.</div>
+  </div>
+</section>
+
 <div class="footer">
-  <span id="pos">1 / 12</span>
+  <span id="pos">1 / 13</span>
   <span class="timer hide" id="timer">00:00</span>
   <span>lolabot · 23blocks</span>
 </div>
