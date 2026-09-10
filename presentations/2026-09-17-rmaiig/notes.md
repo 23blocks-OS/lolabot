@@ -106,12 +106,17 @@ based on the procedures you wrote and your definition of success.
 **If you are still writing prompts, you are still doing the job.** Treat her as a real employee —
 without the payroll.
 
-## 11 · Conclusions — 20s
+## 11 · So — 20s
 
-The agent is not the hard part. **Continuity is.**
+**This is the payoff for the chart on slide 3 and the first thesis on slide 2.**
 
-**Close on the question:** could a new session, with no history, do what she just did? If yes, you
-have not built anything yet.
+It did not go from 11 to 136 because the models got better. **It went there because I stopped using
+AI as a tool and started hiring.**
+
+**Land on:** you are not adopting a technology, you are learning to manage.
+
+*This also sets up the bonus. If they are now managers, the next slide is the cost of the job they
+just took.*
 
 ## 12 · Bonus track — 40s
 
@@ -147,7 +152,7 @@ Read the ad banner out loud. It is funnier spoken than read.
 
 1. **Theses 05 and 06** on slide 2 — saves 20s
 2. **Slide 5 left column** — say "my inbox, my memory, my tasks" and move on — saves 15s
-3. **Slide 11 conclusions** — the closing question also appears on slide 14 — saves 20s
+3. **Slide 5 right column** — the four-GM line is the only part that matters — saves 15s
 4. **Demo down to 60s** — one outcome, not the full list
 
 **Do not cut:** the opening joke, the headcount chart, the bonus track.
