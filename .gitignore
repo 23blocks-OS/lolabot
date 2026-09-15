@@ -1,5 +1,6 @@
 # Personal data (never push)
 lolabot.yaml
+CLAUDE.md
 brain/credentials*.yaml
 brain/companies*.yaml
 brain/*-private.yaml
@@ -10,22 +11,39 @@ memory/*.md
 !memory/README.md
 emails/
 indexes/
-
-# Python
-__pycache__/
-*.pyc
-.venv/
-
-# IDE
-.vscode/
-.idea/
-
-# OS
-.DS_Store
-Thumbs.db
+agents/*/
+!agents/README.md
 
 # Secrets
 *.secret
 *.pem
 *.key
 secrets.yaml
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Dependencies
+node_modules/
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Build
+dist/
+build/
+*.egg-info/
+
+# Logs
+*.log
+logs/
