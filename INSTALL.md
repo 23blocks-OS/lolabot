@@ -14,14 +14,16 @@ Open Claude Code anywhere and paste this. It does everything.
 ```
 Set me up with lolabot, a personal-assistant framework.
 
-1. Create a folder at ~/assistant and cd into it
-2. Clone https://github.com/23blocks-OS/lolabot.git into ~/lolabot
-3. Run ~/lolabot/setup.sh ~/assistant and answer its questions using sensible
-   defaults — ask me only for my name and what I want to call you
-4. Copy lolabot.yaml.example to lolabot.yaml in ~/assistant
-5. Tell me the single command I need to run next, and stop
+Ask me two things first: my name, and what I want to call you.
 
-Do not configure email or anything requiring passwords. I will do that later.
+Then:
+1. Clone https://github.com/23blocks-OS/lolabot.git into ~/lolabot
+2. Run it, filling in those two answers:
+   ~/lolabot/setup.sh --name "WHAT_TO_CALL_YOU" --user "MY_NAME" ~/assistant
+3. Tell me the one command to run next, then stop
+
+Take sensible defaults for everything else. Don't set up email or anything
+that needs a password — I'll do that later.
 ```
 
 When it finishes, it will tell you to run one command. Run it. **That's the install.**
@@ -70,7 +72,8 @@ Then:
   every {{PLACEHOLDER}}. Ask me only for my name and what to call you — use
   sensible defaults for everything else, and delete sections that need tools
   I have not set up.
-- Copy lolabot/lolabot.yaml.example to assistant/lolabot.yaml
+- Copy lolabot/lolabot.yaml.example to assistant/lolabot.yaml (only if setup.sh
+  did not already write one)
 
 Then read assistant/skills/pa-onboarding/SKILL.md and follow it.
 
@@ -91,11 +94,12 @@ If you would rather do it yourself:
 git clone https://github.com/23blocks-OS/lolabot.git ~/lolabot
 
 # 2. Create your assistant's home and scaffold it
-~/lolabot/setup.sh ~/assistant
+#    (it asks 11 questions; --yes takes every default)
+~/lolabot/setup.sh --name Lola --user "Your Name" ~/assistant
 
-# 3. Configure
+# 3. Configure — setup.sh already wrote lolabot.yaml. Edit it.
 cd ~/assistant
-cp lolabot.yaml.example lolabot.yaml
+$EDITOR lolabot.yaml
 
 # 4. Start your assistant
 claude

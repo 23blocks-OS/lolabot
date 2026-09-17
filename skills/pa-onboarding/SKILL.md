@@ -43,7 +43,8 @@ Ask them **one at a time**, in this order, in the user's own language. Wait for 
 > *"I'm your assistant. Before anything else — what should I call you, and what should you call me?"*
 
 Default: whatever `CLAUDE.md` already says. If setup.sh filled in a name, **confirm it rather than
-re-ask**: *"Setup called me {{AGENT_NAME}} — keep that, or change it?"*
+re-ask** — use the name at the top of `CLAUDE.md`, not a placeholder:
+*"Setup called me Lola — keep that, or change it?"*
 
 ### 2. What am I here to do?
 

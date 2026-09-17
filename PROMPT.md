@@ -10,14 +10,16 @@ It takes about five minutes and costs nothing. MIT licensed.
 ```
 Set me up with lolabot, a personal-assistant framework.
 
-1. Create a folder at ~/assistant
-2. Clone https://github.com/23blocks-OS/lolabot.git into ~/lolabot
-3. Run ~/lolabot/setup.sh ~/assistant using sensible defaults — ask me only
-   for my name and what I want to call you
-4. Copy lolabot.yaml.example to lolabot.yaml in ~/assistant
-5. Tell me the one command to run next, then stop
+Ask me two things first: my name, and what I want to call you.
 
-Don't set up email or anything needing passwords. I'll do that later.
+Then:
+1. Clone https://github.com/23blocks-OS/lolabot.git into ~/lolabot
+2. Run it, filling in those two answers:
+   ~/lolabot/setup.sh --name "WHAT_TO_CALL_YOU" --user "MY_NAME" ~/assistant
+3. Tell me the one command to run next, then stop
+
+Take sensible defaults for everything else. Don't set up email or anything
+that needs a password — I'll do that later.
 ```
 
 ---

@@ -3,7 +3,7 @@
 **Your AI Chief of Staff** — Personal Assistant framework for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Email, semantic memory, task management, content security.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Platform: macOS](https://img.shields.io/badge/Platform-macOS-lightgrey.svg)]()
+[![Platform: macOS | Linux](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux-lightgrey.svg)]()
 [![AI Maestro](https://img.shields.io/badge/AI%20Maestro-compatible-orange.svg)](https://github.com/23blocks-OS/ai-maestro)
 
 ---
@@ -31,14 +31,16 @@ Lola runs standalone with just Claude Code. Optionally, deploy her on [AI Maestr
 ```
 Set me up with lolabot, a personal-assistant framework.
 
-1. Create a folder at ~/assistant and cd into it
-2. Clone https://github.com/23blocks-OS/lolabot.git into ~/lolabot
-3. Run ~/lolabot/setup.sh ~/assistant and answer its questions using sensible
-   defaults — ask me only for my name and what I want to call you
-4. Copy lolabot.yaml.example to lolabot.yaml in ~/assistant
-5. Tell me the single command I need to run next, and stop
+Ask me two things first: my name, and what I want to call you.
 
-Do not configure email or anything requiring passwords. I will do that later.
+Then:
+1. Clone https://github.com/23blocks-OS/lolabot.git into ~/lolabot
+2. Run it, filling in those two answers:
+   ~/lolabot/setup.sh --name "WHAT_TO_CALL_YOU" --user "MY_NAME" ~/assistant
+3. Tell me the one command to run next, then stop
+
+Take sensible defaults for everything else. Don't set up email or anything
+that needs a password — I'll do that later.
 ```
 
 **No terminal?** Claude Cowork and any assistant that can use folders can set it up for you —
@@ -61,12 +63,11 @@ your answers to `brain/charter.md` and into its own instructions, then gets to w
 git clone https://github.com/23blocks-OS/lolabot.git
 
 # Scaffold a new PA instance
-./lolabot/setup.sh ~/my-assistant
+./lolabot/setup.sh --name Lola --user "Your Name" ~/my-assistant
 
-# Configure your instance
+# Configure your instance — setup.sh already wrote lolabot.yaml
 cd ~/my-assistant
-cp lolabot.yaml.example lolabot.yaml
-# Edit lolabot.yaml with your settings
+$EDITOR lolabot.yaml
 
 # Set environment
 export LOLABOT_HOME=~/my-assistant
@@ -122,7 +123,8 @@ your-assistant/          # Your PA instance (private, never pushed)
 
 ## Configuration
 
-All configuration lives in `lolabot.yaml`. See `lolabot.yaml.example` for all options.
+All configuration lives in `lolabot.yaml`, which `setup.sh` writes for you. See
+`lolabot.yaml.example` in the lolabot repo for every option.
 
 The single required environment variable is `LOLABOT_HOME`, pointing to your PA instance directory.
 
