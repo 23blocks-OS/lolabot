@@ -76,6 +76,10 @@ li:before{content:"";position:absolute;left:0;top:1.2em;width:.6rem;height:2px;b
 .thesis .t{font-size:clamp(1.5rem,3vmin,2.15rem);line-height:1.28;color:var(--paper)}
 .thesis .t em{font-style:normal;color:var(--dim);font-size:.82em;display:block;margin-top:.25rem}
 .timer.hide{display:none}
+#fallback{display:none;width:100%;max-width:min(96vw,1600px);border-radius:6px;
+  box-shadow:0 18px 50px rgba(0,0,0,.5);border:1px solid var(--rule)}
+#demoslide.fb #fallback{display:block}
+#demoslide.fb #demobox,#demoslide.fb #democap,#demoslide.fb .eyebrow{display:none}
 </style>
 </head>
 <body>
@@ -167,10 +171,11 @@ li:before{content:"";position:absolute;left:0;top:1.2em;width:.6rem;height:2px;b
 </section>
 
 <!-- 7 -->
-<section class="slide center">
+<section class="slide center" id="demoslide">
   <div class="eyebrow step">Demo</div>
-  <div class="demo-box step">LIVE</div>
-  <p class="step">Nine words. She already knew the customer, the project, who to copy, what language they read, and what was still unpaid.</p>
+  <div class="demo-box step" id="demobox">LIVE</div>
+  <p class="step" id="democap">Nine words. She already knew the customer, the end client, who does the work, who to copy, and what language they read.</p>
+  <img id="fallback" src="demo-fallback.png" alt="Demo result — Salesland">
 </section>
 
 <!-- 8 -->
@@ -299,6 +304,8 @@ li:before{content:"";position:absolute;left:0;top:1.2em;width:.6rem;height:2px;b
   function steps(i){return [].slice.call(slides[i].querySelectorAll('.step'));}
   function render(){
     slides.forEach(function(s,i){s.classList.toggle('on',i===si);});
+    var ds=document.getElementById('demoslide');
+    if(ds&&!ds.classList.contains('on')){ds.classList.remove('fb');}
     steps(si).forEach(function(el,i){
       var on=i<step; el.classList.toggle('in',on);
       var b=el.querySelector?el.querySelector('.bar'):null;
@@ -314,6 +321,8 @@ li:before{content:"";position:absolute;left:0;top:1.2em;width:.6rem;height:2px;b
     if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();prev();}
     if(e.key==='Home'){si=0;step=1;render();}
     if(e.key==='End'){si=slides.length-1;step=steps(si).length;render();}
+    if(e.key==='f'||e.key==='F'){var ds=document.getElementById('demoslide');
+      if(ds&&ds.classList.contains('on')){e.preventDefault();ds.classList.toggle('fb');}}
     if(e.key==='p'||e.key==='P'){var el=document.getElementById('timer');el.classList.toggle('hide');
       if(!el.classList.contains('hide')){t0=Date.now();tick=setInterval(function(){var s=Math.floor((Date.now()-t0)/1000);
         el.textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
