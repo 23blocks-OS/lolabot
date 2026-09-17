@@ -26,6 +26,27 @@ ask() {
     local prompt="$1"
     local default="${2:-}"
     local var_name="$3"
+    local preset="${!var_name:-}"
+
+    # Already supplied on the command line — keep it, say so, ask nothing.
+    if [[ -n "$preset" ]]; then
+        echo -e "${BOLD}$prompt${NC}: ${GREEN}$preset${NC}"
+        return
+    fi
+
+    # No terminal, or --yes: take the default. A required field with no default
+    # is a hard stop, because guessing someone's name is worse than failing.
+    if [[ "$NON_INTERACTIVE" == "true" ]]; then
+        if [[ -z "$default" ]]; then
+            error "$prompt is required, and there is nothing to read from."
+            error "Pass it on the command line. See: $0 --help"
+            exit 1
+        fi
+        echo -e "${BOLD}$prompt${NC}: ${GREEN}$default${NC} (default)"
+        eval "$var_name=\$default"
+        return
+    fi
+
     if [[ -n "$default" ]]; then
         echo -en "${BOLD}$prompt${NC} [${default}]: "
     else
@@ -33,12 +54,12 @@ ask() {
     fi
     read -r input
     if [[ -z "$input" && -n "$default" ]]; then
-        eval "$var_name='$default'"
+        eval "$var_name=\$default"
     elif [[ -z "$input" ]]; then
         error "This field is required."
         ask "$prompt" "$default" "$var_name"
     else
-        eval "$var_name='$input'"
+        eval "$var_name=\$input"
     fi
 }
 
@@ -52,19 +73,56 @@ if [[ ! -f "$TEMPLATE_FILE" ]]; then
     exit 1
 fi
 
-# --- Parse target directory ---
-if [[ $# -lt 1 ]]; then
-    echo -e "${BOLD}Usage:${NC} $0 /path/to/new-pa-instance"
+# --- Defaults that flags may fill in ---
+AGENT_NAME=""
+AGENT_ROLE=""
+USER_NAME=""
+TARGET_ARG=""
+NON_INTERACTIVE="false"
+
+usage() {
+    echo -e "${BOLD}Usage:${NC} $0 [options] /path/to/new-pa-instance"
     echo ""
     echo "Creates a new Personal Assistant instance with the lolabot framework."
     echo ""
-    echo "Example:"
+    echo -e "${BOLD}Options:${NC}"
+    echo "  --name NAME        What to call the assistant (e.g. Lola)"
+    echo "  --role ROLE        Its job title (default: Personal Assistant)"
+    echo "  --user NAME        Your full name"
+    echo "  -y, --yes          Accept every default. No questions."
+    echo "  -h, --help         Show this and stop."
+    echo ""
+    echo -e "${BOLD}Examples:${NC}"
     echo "  $0 ~/my-assistant"
-    echo "  $0 /home/user/jarvis"
+    echo "  $0 --name Lola --user \"Juan Pelaez\" --yes ~/my-assistant"
+    echo ""
+    echo "Without a terminal, the script takes every default automatically."
+    echo "It still needs --name and --user, because it will not invent them."
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --name)  AGENT_NAME="${2:-}"; shift 2 ;;
+        --role)  AGENT_ROLE="${2:-}"; shift 2 ;;
+        --user)  USER_NAME="${2:-}"; shift 2 ;;
+        -y|--yes|--non-interactive) NON_INTERACTIVE="true"; shift ;;
+        -h|--help) usage; exit 0 ;;
+        -*) error "Unknown option: $1"; echo ""; usage; exit 1 ;;
+        *)  TARGET_ARG="$1"; shift ;;
+    esac
+done
+
+# No terminal on stdin means nobody can answer a question. Take the defaults.
+if [[ ! -t 0 ]]; then
+    NON_INTERACTIVE="true"
+fi
+
+if [[ -z "$TARGET_ARG" ]]; then
+    usage
     exit 1
 fi
 
-TARGET_DIR="$(realpath -m "$1")"
+TARGET_DIR="$(realpath -m "$TARGET_ARG")"
 INSTANCE_NAME="$(basename "$TARGET_DIR")"
 
 # --- Check if target exists ---
@@ -75,8 +133,11 @@ if [[ -d "$TARGET_DIR" ]]; then
         exit 1
     fi
     warn "Directory $TARGET_DIR already exists. Files will be created inside it."
-    echo -en "Continue? [y/N]: "
-    read -r confirm
+    confirm="y"
+    if [[ "$NON_INTERACTIVE" != "true" ]]; then
+        echo -en "Continue? [y/N]: "
+        read -r confirm
+    fi
     if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
         info "Aborted."
         exit 0
@@ -143,12 +204,18 @@ ask "Timezone (e.g., America/Denver, UTC)" "$(cat /etc/timezone 2>/dev/null || e
 
 header "Email Configuration (optional — press Enter to skip)"
 
-echo -en "${BOLD}User's email account${NC} (e.g., user@example.com) [skip]: "
-read -r EMAIL_ACCOUNT_1
+EMAIL_ACCOUNT_1=""
+if [[ "$NON_INTERACTIVE" != "true" ]]; then
+    echo -en "${BOLD}User's email account${NC} (e.g., user@example.com) [skip]: "
+    read -r EMAIL_ACCOUNT_1
+fi
 EMAIL_ACCOUNT_1="${EMAIL_ACCOUNT_1:-user@example.com}"
 
-echo -en "${BOLD}Agent's email account${NC} (e.g., agent@example.com) [skip]: "
-read -r EMAIL_ACCOUNT_2
+EMAIL_ACCOUNT_2=""
+if [[ "$NON_INTERACTIVE" != "true" ]]; then
+    echo -en "${BOLD}Agent's email account${NC} (e.g., agent@example.com) [skip]: "
+    read -r EMAIL_ACCOUNT_2
+fi
 EMAIL_ACCOUNT_2="${EMAIL_ACCOUNT_2:-agent@example.com}"
 
 # --- Derived values ---
@@ -170,8 +237,11 @@ echo -e "  Email 2:   ${GREEN}$EMAIL_ACCOUNT_2${NC}"
 echo -e "  Target:    ${GREEN}$TARGET_DIR${NC}"
 echo -e "  Agent ID:  ${GREEN}$AGENT_ID${NC}"
 echo ""
-echo -en "${BOLD}Proceed with setup? [Y/n]:${NC} "
-read -r proceed
+proceed="y"
+if [[ "$NON_INTERACTIVE" != "true" ]]; then
+    echo -en "${BOLD}Proceed with setup? [Y/n]:${NC} "
+    read -r proceed
+fi
 if [[ "$proceed" == "n" || "$proceed" == "N" ]]; then
     info "Aborted."
     exit 0
