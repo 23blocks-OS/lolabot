@@ -1,0 +1,59 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+:root{--ink:#0d1b2a;--ink-2:#122437;--paper:#f4efe6;--dim:#c9bfae;--brass:#e0a458;--rule:#2e4d6e;--muted:#9fb0c2;--good:#93c47d}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1600px;height:900px;background:var(--ink);color:var(--paper);
+  font-family:Georgia,'Iowan Old Style',serif;padding:56px 72px;display:flex;flex-direction:column;justify-content:center}
+.eyebrow{font-family:ui-monospace,Menlo,monospace;font-size:19px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--brass);margin-bottom:22px}
+.ask{background:var(--ink-2);border-left:5px solid var(--brass);padding:20px 26px;
+  font-family:ui-monospace,Menlo,monospace;font-size:27px;line-height:1.45;color:var(--paper)}
+.ask .you{color:var(--brass)}
+.cols{display:grid;grid-template-columns:1.05fr 1fr;gap:54px;margin-top:38px;align-items:start}
+h3{font-size:22px;font-weight:400;color:var(--brass);margin-bottom:14px;
+  font-family:ui-monospace,monospace;letter-spacing:.13em;text-transform:uppercase}
+ul{list-style:none}
+li{font-size:25px;line-height:1.36;color:var(--dim);padding:8px 0 8px 24px;position:relative}
+li:before{content:"";position:absolute;left:0;top:22px;width:11px;height:2px;background:var(--brass)}
+li b{color:var(--paper);font-weight:400;border-bottom:2px solid var(--brass)}
+table{width:100%;border-collapse:collapse;font-family:ui-monospace,monospace;font-size:24px}
+td{padding:9px 6px;border-bottom:1px solid var(--rule);color:var(--dim)}
+td.n{text-align:right;color:var(--paper)}
+td.s{text-align:right;font-size:20px;letter-spacing:.06em}
+.paid{color:var(--good)}.open{color:var(--brass)}
+tr.tot td{border-bottom:none;border-top:2px solid var(--brass);padding-top:15px;
+  color:var(--paper);font-size:27px}
+.kicker{margin-top:46px;font-size:29px;line-height:1.4;color:var(--brass);
+  border-top:1px solid var(--rule);padding-top:22px}
+.kicker b{color:var(--paper);font-weight:400}
+.foot{font-family:ui-monospace,monospace;font-size:17px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--muted);margin-top:18px}
+</style></head><body>
+<div class="eyebrow">Demo · what she already knew</div>
+<div class="ask"><span class="you">&gt;</span> what is the status of the customer salesland?</div>
+<div class="cols">
+  <div>
+    <h3>Nine words in, she had</h3>
+    <ul>
+      <li>The customer: <b>Salesland S.L.U.</b>, Madrid</li>
+      <li>The end client: <b>Moeve Pro Services</b> — not Salesland</li>
+      <li>The project: <b>iCPA</b> — sole external Google Cloud provider</li>
+      <li>Who is copied, and that <b>they read Spanish</b></li>
+      <li>Contract terms, SLAs, jurisdiction</li>
+      <li>And who does the work: <b>salesland-dev-3metas</b></li>
+    </ul>
+  </div>
+  <div>
+    <h3>The money that agent earned</h3>
+    <table>
+      <tr><td>SL-2026-001</td><td class="n">€ 2.405</td><td class="s paid">PAID</td></tr>
+      <tr><td>SL-2026-002</td><td class="n">€ 2.405</td><td class="s paid">PAID</td></tr>
+      <tr><td>SL-2026-003</td><td class="n">€ 600</td><td class="s paid">PAID</td></tr>
+      <tr><td>SL-2026-004</td><td class="n">€ 600</td><td class="s paid">PAID</td></tr>
+      <tr><td>SL-2026-005</td><td class="n">€ 600</td><td class="s open">DUE 1 OCT</td></tr>
+      <tr class="tot"><td>COLLECTED</td><td class="n">€ 6.010</td><td class="s">NOTHING LATE</td></tr>
+    </table>
+  </div>
+</div>
+<div class="kicker">One of the 136. It did the delivery work, and <b>the customer paid for it.</b></div>
+<div class="foot">A fresh session cannot do this at any price — it has never met your company</div>
+</body></html>

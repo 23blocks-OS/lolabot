@@ -3,7 +3,8 @@
 **10 minutes total. 6–7 to present, 3–4 for questions.** Arrive 5:45 to test the laptop.
 
 **Run the deck:** open `index.html`. Right arrow or click advances one reveal at a time. **Press `p`
-for the timer** — it turns amber at 6:00 and red at 7:00.
+for the timer** — it turns amber at 6:00 and red at 7:00. **On slide 7, `f` shows the demo
+fallback.**
 
 **The deck supports the talk. It is not the talk.** Nothing on a slide needs reading aloud.
 
@@ -77,7 +78,11 @@ normally copied, that they read Spanish, and that a second invoice was outstandi
 **The line that matters:** a fresh session cannot do that at any price. Not because it is less
 capable. **Because it has never met your company.**
 
-*Have a screenshot ready in case live fails. Never debug on stage.*
+**If live fails, press `f`.** The finished result appears as a full slide — the question, what she
+knew, and the invoice table. Press `f` again to go back. It clears by itself when you leave the
+slide, so it cannot surprise you later.
+
+*Never debug on stage. Press `f`, say what she did, move to Tip 1.*
 
 ## 8 · Tip 1 — Hire your own Lola — 45s
 
@@ -161,5 +166,5 @@ Read the ad banner out loud. It is funnier spoken than read.
 
 **The deck needs no network.** One file plus one image.
 
-**If the demo fails, do not debug.** Say what it would have done and move to Tip 1. Nobody in the
-room will know, and the tips are the part they can use.
+**If the demo fails, do not debug. Press `f` on slide 7.** The result is already on the slide —
+read it out and move to Tip 1. Nobody in the room will know, and the tips are the part they can use.
