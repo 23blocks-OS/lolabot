@@ -517,7 +517,7 @@ elif command -v python3 &>/dev/null; then
     fi
 else
     warn "Neither uv nor python3 found. Skipping venv setup."
-    warn "Install Python and run: cd $TARGET_DIR && uv venv .venv && source .venv/bin/activate && uv pip install "memvid-sdk>=2.0.152""
+    warn "Install Python and run: cd $TARGET_DIR && uv venv .venv && source .venv/bin/activate && uv pip install \"memvid-sdk>=2.0.152\""
 fi
 
 # --- Initialize git repo if not already ---
