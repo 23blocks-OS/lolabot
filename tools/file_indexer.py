@@ -353,7 +353,11 @@ class FileIndex:
     def add_files(self, files: List[Dict[str, Any]], batch_tags: List[str] = None):
         """Add multiple files to the index."""
         if not self.mem:
-            self.open(create=True)
+            # create=True means mode="create", which WIPES an existing index.
+            # Only create when there is nothing there — otherwise every scan
+            # silently threw away every scan before it, and the index held the
+            # last directory only.
+            self.open(create=not os.path.exists(self.index_path))
 
         for i, file_info in enumerate(files):
             self.add_file(file_info, batch_tags)

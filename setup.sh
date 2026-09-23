@@ -506,18 +506,18 @@ if command -v uv &>/dev/null; then
     (cd "$TARGET_DIR" && uv venv .venv 2>&1) && success "Created .venv with uv" || warn "Failed to create venv with uv"
     if [[ -f "$TARGET_DIR/.venv/bin/activate" ]]; then
         info "Installing base dependencies..."
-        (cd "$TARGET_DIR" && source .venv/bin/activate && uv pip install memvid-sdk 2>&1) && success "Installed memvid-sdk" || warn "memvid-sdk install failed (can install later)"
+        (cd "$TARGET_DIR" && source .venv/bin/activate && uv pip install "memvid-sdk>=2.0.152" 2>&1) && success "Installed memvid-sdk" || warn "memvid-sdk install failed (can install later)"
     fi
 elif command -v python3 &>/dev/null; then
     info "uv not found, using python3 venv..."
     python3 -m venv "$TARGET_DIR/.venv" 2>&1 && success "Created .venv with python3" || warn "Failed to create venv"
     if [[ -f "$TARGET_DIR/.venv/bin/activate" ]]; then
         info "Installing base dependencies..."
-        (cd "$TARGET_DIR" && source .venv/bin/activate && pip install memvid-sdk 2>&1) && success "Installed memvid-sdk" || warn "memvid-sdk install failed (can install later)"
+        (cd "$TARGET_DIR" && source .venv/bin/activate && pip install "memvid-sdk>=2.0.152" 2>&1) && success "Installed memvid-sdk" || warn "memvid-sdk install failed (can install later)"
     fi
 else
     warn "Neither uv nor python3 found. Skipping venv setup."
-    warn "Install Python and run: cd $TARGET_DIR && uv venv .venv && source .venv/bin/activate && uv pip install memvid-sdk"
+    warn "Install Python and run: cd $TARGET_DIR && uv venv .venv && source .venv/bin/activate && uv pip install "memvid-sdk>=2.0.152""
 fi
 
 # --- Initialize git repo if not already ---
