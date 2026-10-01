@@ -12,7 +12,7 @@ Features:
 - Confidence scores: Quality indicator for memories
 
 Usage:
-    python memory_indexer.py add --type fact "Juan's income is $215,628/year"
+    python memory_indexer.py add --type fact "Alex's income is $85,000/year"
     python memory_indexer.py add --type event --date 2024-10-17 "Immigration waiver approved"
     python memory_indexer.py find "health issues"
     python memory_indexer.py stats
@@ -314,7 +314,7 @@ class MemoryMetadataDB:
 # Memory types
 class MemoryType:
     FACT = "fact"           # Things that are true (Juan lives in Boulder)
-    EVENT = "event"         # Things that happened (Heart attack on 8/13/2024)
+    EVENT = "event"         # Things that happened (Broke left wrist on 3/2/2025)
     LEARNING = "learning"   # Things discovered (Memvid is faster than SQLite)
     DECISION = "decision"   # Choices made and why (Chose Memvid for memory storage)
     NOTE = "note"           # General notes about topics

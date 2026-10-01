@@ -109,13 +109,13 @@ python tools/memory_indexer.py <command>
 
 ```bash
 # Add to long-term (permanent)
-python tools/memory_indexer.py add "User's income is $215,628/year" --type fact
+python tools/memory_indexer.py add "User's income is $85,000/year" --type fact
 
 # Add with metadata
-python tools/memory_indexer.py add "Heart attack on 8/13/2024" \
+python tools/memory_indexer.py add "Broke left wrist on 3/2/2025" \
   --type event \
-  --date 2024-08-13 \
-  --people "User,Dr. White" \
+  --date 2025-03-02 \
+  --people "User,Dr. Lee" \
   --tags "health,medical"
 
 # Add to short-term (staging area)
@@ -138,7 +138,7 @@ python tools/memory_indexer.py find "2024" --type event
 python tools/memory_indexer.py find "family" --year 2024
 
 # Filter by person
-python tools/memory_indexer.py find "medical" --person "Dr. White"
+python tools/memory_indexer.py find "medical" --person "Dr. Lee"
 
 # Search short-term
 python tools/memory_indexer.py find "recent" --short-term
@@ -254,16 +254,16 @@ This tells you what memories are actually useful vs. just stored.
 
 ```bash
 # User shares health info
-python tools/memory_indexer.py add "User had heart attack on 8/13/2024" \
-  --type event --date 2024-08-13 --tags "health"
+python tools/memory_indexer.py add "User broke their wrist on 3/2/2025" \
+  --type event --date 2025-03-02 --tags "health"
 
 # Later, user mentions it again (reinforces existing)
-python tools/memory_indexer.py add "Heart attack was in August 2024"
+python tools/memory_indexer.py add "Wrist fracture was in March 2025"
 # Output: "Similar memory exists (reinforcement #2)"
 
 # When user asks about health
 python tools/memory_indexer.py find "health"
-# Returns: Heart attack event with [reinforced:2x, accessed:1x]
+# Returns: Wrist fracture event with [reinforced:2x, accessed:1x]
 
 # Check what's most accessed
 python tools/memory_indexer.py stats

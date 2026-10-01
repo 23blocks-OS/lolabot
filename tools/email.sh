@@ -2,12 +2,12 @@
 # Lola Email Client - Main wrapper
 #
 # Usage:
-#   email.sh check jpelaez@3metas.com
-#   email.sh read jpelaez@3metas.com 12345
-#   email.sh send lola@3metas.com --to "user@example.com" --subject "Hello" --body "Message"
-#   email.sh reply jpelaez@3metas.com 12345 --body "My reply"
-#   email.sh search "invoice" --account jpelaez@3metas.com
-#   email.sh sync jpelaez@3metas.com --days 7
+#   email.sh check alex@example.com
+#   email.sh read alex@example.com 12345
+#   email.sh send assistant@example.com --to "user@example.com" --subject "Hello" --body "Message"
+#   email.sh reply alex@example.com 12345 --body "My reply"
+#   email.sh search "invoice" --account alex@example.com
+#   email.sh sync alex@example.com --days 7
 #   email.sh accounts
 
 LOLABOT_HOME="${LOLABOT_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
