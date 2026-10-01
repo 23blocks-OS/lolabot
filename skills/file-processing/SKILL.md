@@ -1,6 +1,6 @@
 ---
-name: File Processing
-description: Process, classify, organize, and index documents. Extracts relevant information to user's memory.
+name: file-processing
+description: Classify, file and index documents, and extract the facts in them into the user's memory. Use when a document needs classifying, filing or indexing, such as a new PDF, scan or photo of an ID, contract, certificate, medical or financial record.
 allowed-tools: Bash, Read, Write, Glob
 ---
 

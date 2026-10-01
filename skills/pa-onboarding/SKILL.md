@@ -1,6 +1,6 @@
 ---
-name: PA Onboarding
-description: First-run skill. On the very first session in a fresh instance, the assistant introduces itself and agrees a charter with its user — its name, its role, the work it owns, and how success is measured — then writes that charter into its own CLAUDE.md. Runs once.
+name: pa-onboarding
+description: Use on the very first session in a fresh instance. First-run skill: the assistant introduces itself and agrees a charter with its user — its name, its role, the work it owns, and how success is measured — then writes that charter into its own CLAUDE.md. Runs once.
 allowed-tools: Bash, Read, Edit, Write
 ---
 
