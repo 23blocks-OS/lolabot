@@ -4,169 +4,54 @@ description: Classify, file and index documents, and extract the facts in them i
 allowed-tools: Bash, Read, Write, Glob
 ---
 
-# File Processing Skill
+# File Processing
 
-When asked to "process", "organize", or "file" documents, follow this complete workflow.
+Processing a document means four things, all of them: read it, move it to its permanent folder, index it at the new path, and save the facts it contains to the user's memory. Stopping after any one of these leaves the document unfindable or its facts unknown.
 
----
+## 1. Read it
 
-## The Workflow
+Read PDFs, images and text with the Read tool. Note the document type, the people in it, dates, and the facts the user would later ask about. Convert HEIC photos first with `$LOLABOT_HOME/tools/heic-convert.sh <file-or-folder>` (JPGs go to `/tmp/heic-converted/`).
 
-### 1. Read & Understand
+## 2. Move it to its permanent folder
 
-Read each document to understand its content:
-- PDFs: Use Read tool (supports PDF extraction)
-- Images: Use Read tool (multimodal)
-- Text files: Use Read tool
-
-Extract key information:
-- Document type (ID, legal, medical, business, personal)
-- People involved
-- Dates and events
-- Important facts
-
-### 2. Classify & Organize
-
-Move files to the appropriate folder based on content:
-
-| Document Type | Destination |
-|---------------|-------------|
-| Personal ID (cédula, passport, police certs) | `~/documents/personal/id/` |
+| Document | Folder |
+|---|---|
+| The user's own ID (passport, national ID, police certificates) | `~/documents/personal/id/` |
 | Military records | `~/documents/personal/military/` |
-| Family member docs | `~/documents/personal/{name}/` |
-| Legal (divorces, contracts) | `~/documents/legal/{category}/` |
-| Migration/immigration | `~/documents/legal/migration/` |
-| Medical records, billing | `~/documents/medical/` |
-| Company documents | `~/{CompanyName}/documents/` |
-| Contact/third-party docs | `~/documents/contacts/{name}/` |
+| A family member's documents | `~/documents/personal/<name>/` |
+| Legal (contracts, divorce) | `~/documents/legal/<category>/` |
+| Migration and immigration | `~/documents/legal/migration/` |
+| Medical records and bills | `~/documents/medical/` |
+| A company's documents | `~/<Company>/documents/` (the company's folder, not personal documents) |
+| Someone else's documents (a contact or third party) | `~/documents/contacts/<name>/` |
 
-**Important:** Company documents go in the company folder, not personal documents.
+The companies and their folders are listed under "Companies & Projects" in CLAUDE.md. Create folders with `mkdir -p` as needed.
 
-### 3. Index Files
+New documents usually arrive in the transport folder, the instance's drop folder (if CLAUDE.md does not say where it is, ask the user). Transport is a drop zone, not storage: move each file out, and once it is indexed at its new path, delete the original from transport.
 
-Use `file_indexer.py` to add files to the searchable index:
-
-```bash
-$LOLABOT_HOME/tools/files.sh scan /path/to/folder --tags "tag1,tag2"
-$LOLABOT_HOME/tools/files.sh add "/path/to/file.pdf" -d "Description" -t "tags"
-```
-
-Or with full command:
-```bash
-source $LOLABOT_HOME/.venv/bin/activate
-python $LOLABOT_HOME/tools/file_indexer.py scan /path --tags "tags"
-```
-
-**Tagging guidelines:**
-- Always include document type: `personal`, `legal`, `medical`, `business`
-- Include person name if relevant: `alex`, `sam`, `jordan`
-- Include category: `id`, `passport`, `divorce`, `migration`
-
-### 4. Extract to Memory
-
-For documents containing personal information about the user or their family, add relevant facts to memory:
+## 3. Index it
 
 ```bash
-$LOLABOT_HOME/tools/memory.sh add "Fact extracted from document" --type fact --tags "relevant,tags"
+$LOLABOT_HOME/tools/files.sh add "<new path>" -d "<one-line description>" -t "<tags>"
+$LOLABOT_HOME/tools/files.sh scan <folder> --tags "<tags>"     # a whole folder (--no-recursive, --pattern '*.pdf')
+$LOLABOT_HOME/tools/files.sh find "<query>"                     # check it is findable
 ```
 
-Or with full command:
-```bash
-source $LOLABOT_HOME/.venv/bin/activate
-python $LOLABOT_HOME/tools/memory_indexer.py add "..." --type fact --tags "..."
-```
+Tags: the document type (`personal`, `legal`, `medical`, `business`), the person's name if it is about someone, and the category (`id`, `passport`, `divorce`, `migration`...). The description is what search matches on, so say what the document is and whose it is.
 
-**What to extract:**
-| Document Contains | Memory Type | Example |
-|-------------------|-------------|---------|
-| Birth date, ID numbers | fact | "Alex's ID number is 00,000,000" |
-| Events with dates | event | "Sam born March 3, 2012" |
-| Relationships | person | "Jordan Rivera is Alex's cousin" |
-| Addresses | fact | "Current address: 123 Example St..." |
-| Financial info | fact | "Clinic balance: $1,250.00" |
-| Expiration dates | fact | "Sam's passport expires Jan 1, 2030" |
-
-**Don't extract:**
-- Redundant information already in memory
-- Trivial details
-- Sensitive credentials (store securely elsewhere)
-
----
-
-## Folder Structure Reference
-
-```
-~/
-├── documents/
-│   ├── personal/
-│   │   ├── id/           # Juan's ID documents
-│   │   ├── military/     # Military records
-│   │   ├── sam/          # Child's documents
-│   │   ├── jordan/       # Parent's documents
-│   │   └── {family}/     # Other family members
-│   ├── legal/
-│   │   ├── divorces/
-│   │   ├── migration/
-│   │   └── contracts/
-│   ├── medical/
-│   └── contacts/
-│       └── {name}/       # Third-party documents
-├── 3Metas/
-│   └── documents/        # 3Metas company docs
-├── PPM/
-│   └── documents/        # PPM company docs
-└── {Company}/
-    └── documents/        # Other company docs
-```
-
----
-
-## Transport Folder
-
-New documents typically arrive in `/srv/fileserver/transport/` (local fileserver on mini-lola).
-
-When processing transport:
-1. List all files in transport
-2. Process each file through the workflow
-3. After successful copy and indexing, originals can remain or be removed
-
----
-
-## Example Session
+## 4. Save the facts to the user's memory
 
 ```bash
-# 1. List what's in transport
-ls /mnt/fileserver/transport/
-
-# 2. Read a PDF
-# (Use Read tool on each file)
-
-# 3. Create destination folder if needed
-mkdir -p ~/documents/personal/sam
-
-# 4. Copy file to destination
-cp "/mnt/fileserver/transport/Sam Birth Certificate.pdf" \
-   "~/documents/personal/sam/"
-
-# 5. Index the file
-source $LOLABOT_HOME/.venv/bin/activate
-python $LOLABOT_HOME/tools/file_indexer.py scan \
-  ~/documents/personal/sam --tags "personal,sam,family"
-
-# 6. Add to memory
-python $LOLABOT_HOME/tools/memory_indexer.py add \
-  "Sam Rivera born March 3, 2012. Mother: Taylor Rivera" \
-  --type fact --tags "family,sam"
+$LOLABOT_HOME/tools/memory.sh add "<fact>" --type fact|event|person --tags "<tags>" \
+    [--date YYYY-MM-DD] [--people "<names>"] [--files "<path>"] [--source "<document>"]
 ```
 
----
+| The document contains | Type | Example |
+|---|---|---|
+| ID numbers, birth dates, addresses, balances, expiry dates | `fact` | "Sam's passport expires 2030-01-01" |
+| Something that happened on a date | `event` | "Sam was born on 2012-03-03" |
+| Who someone is to the user | `person` | "Jordan Rivera is Alex's cousin" |
 
-## Quick Reference
+Pass `--files` with the document's new path and `--source` with its name, so the fact can be traced back. Skip facts memory already has and trivial details. Passwords, PINs and other credentials do not go into memory. Follow the pa-memory-delegation skill for evolving facts (a new address replaces the old one) and for saving to the matching markdown file as well.
 
-| Action | Command |
-|--------|---------|
-| Scan folder | `files.sh scan /path --tags "tags"` |
-| Add single file | `files.sh add "/path" -d "desc" -t "tags"` |
-| Search files | `files.sh find "query"` |
-| Add memory | `memory.sh add "fact" --type TYPE --tags "tags"` |
-| Search memory | `memory.sh find "query"` |
+`files.sh` and `memory.sh` activate the virtualenv themselves.
