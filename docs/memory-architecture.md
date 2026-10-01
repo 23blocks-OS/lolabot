@@ -53,15 +53,15 @@ Two separate Memvid indexes, linked by references:
 **Example entry:**
 ```json
 {
-  "path": "/home/jpelaez/photos/2024/portugal/IMG_0312.jpg",
+  "path": "~/photos/2024/vacation/IMG_0312.jpg",
   "name": "IMG_0312.jpg",
   "type": "image/jpeg",
   "size": 4521984,
   "created": "2024-03-12T14:32:00",
-  "tags": ["portugal", "family", "travel", "2024"],
+  "tags": ["vacation", "family", "travel", "2024"],
   "description": "Juan with family at Mitad del Mundo monument",
   "exif": {"date": "2024-03-12", "location": "Lisbon, Portugal"},
-  "thumbnail": "/home/jpelaez/.lola/thumbnails/abc123.jpg"
+  "thumbnail": "~/.lola/thumbnails/abc123.jpg"
 }
 ```
 
@@ -88,8 +88,8 @@ Two separate Memvid indexes, linked by references:
   "type": "event",
   "content": "Portugal trip in March 2024 - visited friends in Lisbon and explored the coast",
   "date": "2024-03-10",
-  "tags": ["travel", "family", "portugal"],
-  "related_files": ["files://portugal/IMG_0312.jpg", "files://portugal/IMG_0315.jpg"],
+  "tags": ["travel", "family", "vacation"],
+  "related_files": ["files://vacation/IMG_0312.jpg", "files://vacation/IMG_0315.jpg"],
   "related_people": ["Juan", "Yuliana", "family"]
 }
 ```
@@ -100,10 +100,10 @@ Memories can reference files, and files can be tagged with memory contexts:
 
 ```
 Memory: "Portugal trip March 2024..."
-  └── related_files: ["files://portugal/*"]
+  └── related_files: ["files://vacation/*"]
 
-File: "/photos/2024/portugal/IMG_0312.jpg"
-  └── memory_refs: ["memory://events/portugal-2024"]
+File: "/photos/2024/vacation/IMG_0312.jpg"
+  └── memory_refs: ["memory://events/vacation-2024"]
 ```
 
 When I find a memory about Portugal, I can also pull related files.
@@ -130,7 +130,7 @@ User: "Show me photos from Sam's graduation"
 ## Directory Structure
 
 ```
-/home/jpelaez/lola/
+~/lola/
 ├── indexes/
 │   ├── files.mv2          # File index
 │   └── memories.mv2       # Knowledge index
@@ -154,8 +154,8 @@ User: "Show me photos from Sam's graduation"
 ### File Indexer (`lola-index-files`)
 ```bash
 # Scan directories and update files.mv2
-lola-index-files /home/jpelaez/photos
-lola-index-files /home/jpelaez/documents
+lola-index-files ~/photos
+lola-index-files ~/documents
 
 # Query files
 lola-find-files "Portugal trip photos"
@@ -164,7 +164,7 @@ lola-find-files "Portugal trip photos"
 ### Memory Manager (`lola-memory`)
 ```bash
 # Add memory
-lola-memory add --type fact "Juan's income is $85,000/year"
+lola-memory add --type fact "Alex's income is $85,000/year"
 
 # Query memories
 lola-memory find "health issues"

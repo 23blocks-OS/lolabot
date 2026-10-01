@@ -108,7 +108,7 @@ def parse_location(location_str: str) -> Dict[str, str]:
     """Parse a location string into components.
 
     Examples:
-        /home/jpelaez/file.pdf -> local
+        ~/file.pdf -> local
         macbook:/Users/juan/file.pdf -> remote (host: macbook)
         onedrive://Documents/file.pdf -> onedrive
         https://example.com/file.pdf -> url

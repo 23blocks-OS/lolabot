@@ -6,16 +6,16 @@ IMAP/SMTP email client for reading and sending emails.
 Supports multiple accounts with local caching and search.
 
 Accounts:
-- jpelaez@3metas.com - Read and reply on Juan's behalf
-- lola@3metas.com - Lola's own inbox
+- alex@example.com - Read and reply on the owner's behalf
+- assistant@example.com - Lola's own inbox
 
 Usage:
-    python email_client.py check jpelaez@3metas.com
-    python email_client.py read jpelaez@3metas.com 12345
-    python email_client.py send lola@3metas.com --to "user@example.com" --subject "Hello" --body "Message"
-    python email_client.py reply jpelaez@3metas.com 12345 --body "My reply"
-    python email_client.py search "invoice" --account jpelaez@3metas.com
-    python email_client.py sync jpelaez@3metas.com --days 7
+    python email_client.py check alex@example.com
+    python email_client.py read alex@example.com 12345
+    python email_client.py send assistant@example.com --to "user@example.com" --subject "Hello" --body "Message"
+    python email_client.py reply alex@example.com 12345 --body "My reply"
+    python email_client.py search "invoice" --account alex@example.com
+    python email_client.py sync alex@example.com --days 7
 """
 
 import os

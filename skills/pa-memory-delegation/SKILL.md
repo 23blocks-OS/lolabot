@@ -1,6 +1,6 @@
 ---
-name: PA Memory Delegation
-description: Personal Assistant skill for managing the USER's memory (life events, facts, learnings) - NOT the AI's operational memory. Uses a hybrid Memvid + SQLite + Markdown architecture for fast semantic search with mutable metadata tracking.
+name: pa-memory-delegation
+description: Use when the user tells you something worth remembering about their life (facts, events, people, preferences), or asks what you know about them. Manages the USER's memory (life events, facts, learnings) - NOT the AI's operational memory. Uses a hybrid Memvid + SQLite + Markdown architecture for fast semantic search with mutable metadata tracking.
 allowed-tools: Bash
 ---
 
@@ -254,11 +254,11 @@ This tells you what memories are actually useful vs. just stored.
 
 ```bash
 # User shares health info
-python tools/memory_indexer.py add "User had broke their wrist on 3/2/2025" \
+python tools/memory_indexer.py add "User broke their wrist on 3/2/2025" \
   --type event --date 2025-03-02 --tags "health"
 
 # Later, user mentions it again (reinforces existing)
-python tools/memory_indexer.py add "Wrist fracture was in August 2024"
+python tools/memory_indexer.py add "Wrist fracture was in March 2025"
 # Output: "Similar memory exists (reinforcement #2)"
 
 # When user asks about health

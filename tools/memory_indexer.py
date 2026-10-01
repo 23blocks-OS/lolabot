@@ -12,7 +12,7 @@ Features:
 - Confidence scores: Quality indicator for memories
 
 Usage:
-    python memory_indexer.py add --type fact "Juan's income is $85,000/year"
+    python memory_indexer.py add --type fact "Alex's income is $85,000/year"
     python memory_indexer.py add --type event --date 2024-10-17 "Immigration waiver approved"
     python memory_indexer.py find "health issues"
     python memory_indexer.py stats
