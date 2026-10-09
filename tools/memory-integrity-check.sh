@@ -7,13 +7,18 @@
 #   ./memory-integrity-check.sh update   # Update checksums (after authorized changes)
 #
 # Cron example (check every hour):
-#   0 * * * * /path/to/tools/memory-integrity-check.sh check >> /tmp/integrity-check.log 2>&1
+#   0 * * * * /path/to/tools/memory-integrity-check.sh check >/dev/null 2>&1
+# Alerts go to $ALERT_LOG, which is rotated at 5 MB (one previous file kept). Do not
+# append the cron output to a log with ">>": nothing would ever rotate it.
 
 set -euo pipefail
 
 LOLABOT_HOME="${LOLABOT_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 CHECKSUM_FILE="$LOLABOT_HOME/indexes/integrity-checksums.sha256"
-ALERT_LOG="/tmp/integrity-alerts.log"
+ALERT_LOG="${LOLABOT_ALERT_LOG:-/tmp/integrity-alerts.log}"
+
+# shellcheck source=bounded-log.sh
+source "$(dirname "${BASH_SOURCE[0]}")/bounded-log.sh"
 
 # Files to monitor
 WATCHED_FILES=(
@@ -72,8 +77,8 @@ case "$cmd" in
 
         if [ "$FAILURES" -gt 0 ] || [ "$MISSING" -gt 0 ]; then
             TIMESTAMP=$(date -Iseconds)
-            echo "[$TIMESTAMP] INTEGRITY ALERT: $FAILURES file(s) modified, $MISSING file(s) missing" | tee -a "$ALERT_LOG"
-            echo "$RESULT" | grep -E "FAILED|No such file" | tee -a "$ALERT_LOG"
+            echo "[$TIMESTAMP] INTEGRITY ALERT: $FAILURES file(s) modified, $MISSING file(s) missing" | bounded_log_append "$ALERT_LOG"
+            echo "$RESULT" | grep -E "FAILED|No such file" | bounded_log_append "$ALERT_LOG"
             echo ""
             echo "If these changes were authorized, run: $0 update"
             exit 2
