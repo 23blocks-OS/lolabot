@@ -127,9 +127,6 @@ def test_integrity_alert_log_is_bounded(tmp_path):
     env = dict(os.environ, LOLABOT_HOME=str(home), HOME=str(empty),
                LOLABOT_ALERT_LOG=str(log), LOLABOT_LOG_MAX_BYTES='300')
     script = str(home / 'tools/memory-integrity-check.sh')
-    probe = subprocess.run(['bash', '-c', 'echo x | sha256sum -c'], capture_output=True, text=True)
-    if 'usage' in probe.stderr.lower() or 'usage' in probe.stdout.lower():
-        pytest.skip('sha256sum without -c (macOS shim); the script targets GNU coreutils')
     subprocess.run(['bash', script, 'init'], env=env, capture_output=True, check=True)
     (home / 'CLAUDE.md').write_text('tampered')
     for _ in range(20):
@@ -177,3 +174,51 @@ def test_email_retention_removes_only_old_inbox_and_sent(mail, monkeypatch):
     assert not files['inbox'].exists() and not files['sent'].exists()
     assert files['quarantine'].exists()
     assert files['fresh'].exists()
+
+
+def _integrity_home(tmp_path):
+    home = tmp_path / 'home'
+    (home / 'tools').mkdir(parents=True)
+    (home / 'indexes').mkdir()
+    (home / 'CLAUDE.md').write_text('good')
+    for n in ('memory-integrity-check.sh', 'bounded-log.sh'):
+        (home / 'tools' / n).write_text(open(os.path.join(TOOLS, n)).read())
+    fake = tmp_path / 'fakehome'
+    fake.mkdir()
+    return home, fake, str(home / 'tools/memory-integrity-check.sh')
+
+
+def test_integrity_check_detects_tampering_on_any_platform(tmp_path):
+    # Used to be skipped on macOS, which hid the bug: there the check printed a usage error
+    # and still reported every file OK.
+    home, fake, script = _integrity_home(tmp_path)
+    env = dict(os.environ, LOLABOT_HOME=str(home), HOME=str(fake), LOLABOT_ALERT_LOG=str(tmp_path / 'a.log'))
+    subprocess.run(['bash', script, 'init'], env=env, capture_output=True, check=True)
+    ok = subprocess.run(['bash', script, 'check'], env=env, capture_output=True, text=True)
+    assert ok.returncode == 0 and 'OK' in ok.stdout
+    (home / 'CLAUDE.md').write_text('tampered')
+    bad = subprocess.run(['bash', script, 'check'], env=env, capture_output=True, text=True)
+    assert bad.returncode == 2
+    (home / 'CLAUDE.md').unlink()
+    gone = subprocess.run(['bash', script, 'check'], env=env, capture_output=True, text=True)
+    assert gone.returncode == 2
+
+
+def test_integrity_check_never_says_ok_when_the_tool_cannot_run(tmp_path):
+    # A checksum tool that only prints a usage line (what macOS sha256sum does when -c has
+    # no file argument) verifies nothing; the check must fail loudly, not report OK.
+    home, fake, script = _integrity_home(tmp_path)
+    log = tmp_path / 'a.log'
+    env = dict(os.environ, LOLABOT_HOME=str(home), HOME=str(fake), LOLABOT_ALERT_LOG=str(log))
+    subprocess.run(['bash', script, 'init'], env=env, capture_output=True, check=True)
+    (home / 'CLAUDE.md').write_text('tampered')
+    bindir = tmp_path / 'bin'
+    bindir.mkdir()
+    shim = bindir / 'sha256sum'
+    shim.write_text('#!/bin/bash\nif [ "$1" = "-c" ]; then echo "usage: sha256sum [-bctwz] [files ...]" >&2; exit 1; fi\nexec /usr/bin/env shasum -a 256 "$@"\n')
+    shim.chmod(0o755)
+    env['PATH'] = f'{bindir}:{os.environ["PATH"]}'
+    r = subprocess.run(['bash', script, 'check'], env=env, capture_output=True, text=True)
+    assert r.returncode == 3
+    assert 'OK' not in r.stdout.replace('Not reporting OK', '')
+    assert 'COULD NOT RUN' in log.read_text()

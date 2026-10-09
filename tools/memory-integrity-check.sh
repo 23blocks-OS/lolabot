@@ -70,13 +70,28 @@ case "$cmd" in
             exit 1
         fi
 
-        # Run sha256sum check, filtering out comment lines
-        RESULT=$(grep -v '^#' "$CHECKSUM_FILE" | grep -v '^$' | sha256sum -c 2>&1) || true
+        # Verify every recorded checksum. Read the list from stdin with an explicit "-":
+        # GNU sha256sum accepts it, and so does macOS, whose sha256sum prints a usage error
+        # (and verifies nothing) when -c has no file argument.
+        CHECK_LINES=$(grep -v '^#' "$CHECKSUM_FILE" | grep -v '^$')
+        RESULT=$(printf '%s\n' "$CHECK_LINES" | sha256sum -c - 2>&1) || true
         FAILURES=$(echo "$RESULT" | grep -c "FAILED" || true)
         MISSING=$(echo "$RESULT" | grep -c "No such file" || true)
+        VERIFIED_OK=$(echo "$RESULT" | grep -c ': OK$' || true)
+        EXPECTED=$(printf '%s\n' "$CHECK_LINES" | grep -c . || true)
+
+        # If the tool did not account for every file (usage error, missing binary, garbled
+        # output), say so. Reporting "all OK" for a check that never ran is worse than no check.
+        if [ $((FAILURES + MISSING + VERIFIED_OK)) -lt "$EXPECTED" ]; then
+            TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+            echo "[$TIMESTAMP] INTEGRITY CHECK COULD NOT RUN: verified $((FAILURES + MISSING + VERIFIED_OK)) of $EXPECTED files" | bounded_log_append "$ALERT_LOG"
+            echo "$RESULT" | head -3 | bounded_log_append "$ALERT_LOG"
+            echo "ERROR: the checksum tool did not verify all files (see $ALERT_LOG). Not reporting OK."
+            exit 3
+        fi
 
         if [ "$FAILURES" -gt 0 ] || [ "$MISSING" -gt 0 ]; then
-            TIMESTAMP=$(date -Iseconds)
+            TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
             echo "[$TIMESTAMP] INTEGRITY ALERT: $FAILURES file(s) modified, $MISSING file(s) missing" | bounded_log_append "$ALERT_LOG"
             echo "$RESULT" | grep -E "FAILED|No such file" | bounded_log_append "$ALERT_LOG"
             echo ""
