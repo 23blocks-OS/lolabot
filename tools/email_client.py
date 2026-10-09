@@ -297,6 +297,37 @@ def save_email_cache(email_data: Dict[str, Any], account_email: str, folder: str
         json.dump(email_data, f, indent=2, default=str)
 
 
+def prune_email_cache(days: Optional[int] = None) -> int:
+    """Delete cached email JSON files older than LOLABOT_EMAIL_RETENTION_DAYS.
+
+    Opt-in: with the variable unset, empty, zero or invalid, nothing is removed.
+    Touches only *.json files directly inside <emails_dir>/<account>/inbox and /sent.
+    Quarantine and attachments are never removed. Returns the number of files deleted.
+    """
+    if days is None:
+        raw = os.environ.get("LOLABOT_EMAIL_RETENTION_DAYS", "").strip()
+        if not raw.isdigit():
+            return 0
+        days = int(raw)
+    if days <= 0:
+        return 0
+    cutoff = datetime.now().timestamp() - days * 86400
+    removed = 0
+    root = Path(EMAILS_DIR)
+    for acct in ACCOUNT_MAP.keys():
+        for folder in ("inbox", "sent"):
+            folder_dir = root / acct / folder
+            if not folder_dir.is_dir() or folder_dir.is_symlink():
+                continue
+            for f in folder_dir.glob("*.json"):
+                if f.is_symlink() or not f.is_file():
+                    continue
+                if f.stat().st_mtime < cutoff:
+                    f.unlink()
+                    removed += 1
+    return removed
+
+
 def load_email_cache(email_id: str, account_email: str, folder: str = "inbox") -> Optional[Dict[str, Any]]:
     """Load email from local cache."""
     cache_file = Path(EMAILS_DIR) / account_email / folder / f"{email_id}.json"
@@ -910,6 +941,9 @@ def main():
     if not args.command:
         parser.print_help()
         return
+
+    if args.command in ("check", "sync"):
+        prune_email_cache()
 
     if args.command == "check":
         cmd_check(args.account, args.limit)
