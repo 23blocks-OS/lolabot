@@ -434,7 +434,8 @@ Read and send emails from configured accounts.
 - `{{EMAIL_ACCOUNT_1}}` - {{USER_NAME}}'s email (read and reply on their behalf)
 - `{{EMAIL_ACCOUNT_2}}` - My own inbox
 
-**Credentials:** `brain/credentials.yaml` (git-ignored) - Update IMAP/SMTP server and passwords
+**Credentials:** `brain/credentials.yaml` (git-ignored, owner-only) - IMAP/SMTP servers and a `password_secret` name per account. The password itself lives in the vault (`aim-secret set NAME`, typed by the user). Never read, print or ask for a password; if one is missing, tell the user which `aim-secret set NAME` to run.
+**Attachments:** only files inside `outbox/` can be emailed. Copy the file there first. Never try to attach anything else.
 
 ### Quick Commands
 

@@ -45,6 +45,7 @@ except ImportError:
     YAML_AVAILABLE = False
 
 from email_sanitizer import sanitize_email as _sanitize_email, assess_attachment, format_security_summary
+from attachment_guard import check_attachments, AttachmentRefused
 
 
 def _strip_security_tags(text: str) -> str:
@@ -76,25 +77,79 @@ _accounts = _cfg.get('email', {}).get('accounts', [])
 ACCOUNT_MAP = {a['address']: a['config_key'] for a in _accounts if 'address' in a and 'config_key' in a}
 
 
+SECRET_NAME_RE = re.compile(r'^[A-Z][A-Z0-9_]{0,63}$')
+_plaintext_warned = False
+
+
+def _tighten_permissions(path: str) -> None:
+    """The credentials file is for the owner only. Fix it if it is not."""
+    try:
+        mode = os.stat(path).st_mode
+        if mode & 0o077:
+            os.chmod(path, 0o600)
+            print(f"Note: {path} was readable by other users; set it to owner-only (600).", file=sys.stderr)
+    except OSError:
+        pass
+
+
 def load_credentials() -> Dict[str, Any]:
     """Load email credentials from YAML config."""
     if not YAML_AVAILABLE:
-        print("Error: PyYAML not installed. Run: uv pip install pyyaml")
+        print("Error: PyYAML not installed. Run: uv pip install pyyaml", file=sys.stderr)
         sys.exit(1)
 
     if not os.path.exists(CONFIG_FILE):
-        print(f"Error: Config file not found: {CONFIG_FILE}")
+        print(f"Error: Config file not found: {CONFIG_FILE}", file=sys.stderr)
         sys.exit(1)
 
+    _tighten_permissions(CONFIG_FILE)
     with open(CONFIG_FILE, 'r') as f:
         config = yaml.safe_load(f)
 
     if 'email_accounts' not in config:
         print("Error: No email_accounts section in config file")
-        print("Please add email credentials to brain/companies-credentials.yaml")
+        print(f"Please add email credentials to {CONFIG_FILE}")
         sys.exit(1)
 
     return config['email_accounts']
+
+
+def secret_names_needed() -> List[str]:
+    """Names of vault secrets the accounts refer to (never values)."""
+    names = set()
+    for acct in load_credentials().values():
+        n = acct.get('password_secret') if isinstance(acct, dict) else None
+        if n:
+            if not SECRET_NAME_RE.match(str(n)):
+                print(f"Error: invalid password_secret name: {n}", file=sys.stderr)
+                sys.exit(2)
+            names.add(n)
+    return sorted(names)
+
+
+def password_for(config: Dict[str, Any]) -> str:
+    """The mailbox password: from the vault (via aim-secret exec) or, as a fallback, the file."""
+    global _plaintext_warned
+    name = config.get('password_secret')
+    if name:
+        if not SECRET_NAME_RE.match(str(name)):
+            print(f"Error: invalid password_secret name: {name}", file=sys.stderr)
+            sys.exit(2)
+        value = os.environ.get(name)
+        if not value:
+            print(f"Error: secret {name} is not available. Run email through tools/email.sh with aim-secret "
+                  f"installed, and store it once with: aim-secret set {name}", file=sys.stderr)
+            sys.exit(3)
+        return value
+    value = config.get('password')
+    if not value:
+        print("Error: this account has no password or password_secret", file=sys.stderr)
+        sys.exit(1)
+    if not _plaintext_warned:
+        _plaintext_warned = True
+        print("Warning: a plaintext password is stored in the credentials file, where the agent can read it. "
+              "Move it into the vault: python3 tools/migrate_credentials.py --apply", file=sys.stderr)
+    return value
 
 
 def get_account_config(account_email: str) -> Dict[str, Any]:
@@ -341,6 +396,7 @@ def load_email_cache(email_id: str, account_email: str, folder: str = "inbox") -
 
 def connect_imap(config: Dict[str, Any]) -> imaplib.IMAP4_SSL:
     """Connect to IMAP server."""
+    password = password_for(config)  # resolve first: a missing secret must not start a connection
     try:
         context = ssl.create_default_context()
         mail = imaplib.IMAP4_SSL(
@@ -348,7 +404,7 @@ def connect_imap(config: Dict[str, Any]) -> imaplib.IMAP4_SSL:
             config.get('imap_port', 993),
             ssl_context=context
         )
-        mail.login(config['username'], config['password'])
+        mail.login(config['username'], password)
         return mail
     except imaplib.IMAP4.error as e:
         print(f"IMAP connection error: {e}")
@@ -360,6 +416,7 @@ def connect_imap(config: Dict[str, Any]) -> imaplib.IMAP4_SSL:
 
 def connect_smtp(config: Dict[str, Any]) -> smtplib.SMTP:
     """Connect to SMTP server."""
+    password = password_for(config)
     try:
         port = config.get('smtp_port', 587)
 
@@ -374,7 +431,7 @@ def connect_smtp(config: Dict[str, Any]) -> smtplib.SMTP:
             server.starttls()
             server.ehlo()
 
-        server.login(config['username'], config['password'])
+        server.login(config['username'], password)
         return server
     except smtplib.SMTPException as e:
         print(f"SMTP connection error: {e}")
@@ -538,6 +595,18 @@ def cmd_send(account_email: str, to: List[str], subject: str, body: str,
              cc: List[str] = None, attachments: List[str] = None,
              in_reply_to: str = None, references: str = None):
     """Send an email."""
+    if attachments:
+        try:
+            attachments = [str(p) for p in check_attachments(
+                attachments, home=_cfg.get('_home', ''),
+                dirs=_cfg.get('email', {}).get('attachment_dirs'),
+                max_mb=float(_cfg.get('email', {}).get('attachment_max_mb', 25)),
+                credentials_file=CONFIG_FILE)]
+        except AttachmentRefused as e:
+            print("Refusing to send: attachments not allowed:", file=sys.stderr)
+            for problem in e.problems:
+                print(f"  - {problem}", file=sys.stderr)
+            sys.exit(2)
     config = get_account_config(account_email)
 
     # Build message
@@ -546,7 +615,7 @@ def cmd_send(account_email: str, to: List[str], subject: str, body: str,
         msg.attach(MIMEText(body, 'plain'))
 
         for filepath in attachments:
-            if os.path.exists(filepath):
+            if True:  # existence and allowlist were checked above
                 with open(filepath, 'rb') as f:
                     part = MIMEBase('application', 'octet-stream')
                     part.set_payload(f.read())
@@ -933,6 +1002,9 @@ def main():
     p_quarantine = subparsers.add_parser("quarantine", help="List quarantined (jailed) emails")
     p_quarantine.add_argument("--account", help="Limit to specific account")
 
+    # secrets-needed (names only, used by email.sh)
+    subparsers.add_parser("secrets-needed", help="List vault secret names the accounts refer to")
+
     # migrate-security
     subparsers.add_parser("migrate-security", help="Add security metadata to cached emails")
 
@@ -940,6 +1012,11 @@ def main():
 
     if not args.command:
         parser.print_help()
+        return
+
+    if args.command == "secrets-needed":
+        for n in secret_names_needed():
+            print(n)
         return
 
     if args.command in ("check", "sync"):

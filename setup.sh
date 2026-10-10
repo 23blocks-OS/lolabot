@@ -270,10 +270,15 @@ dirs=(
     "$TARGET_DIR/skills"
     "$TARGET_DIR/tests"
     "$TARGET_DIR/docs"
+    "$TARGET_DIR/outbox"
 )
 
 for dir in "${dirs[@]}"; do
     mkdir -p "$dir"
+done
+# Credentials are for the owner only
+for f in "$TARGET_DIR"/brain/credentials.yaml "$TARGET_DIR"/brain/*-credentials.yaml; do
+    [ -f "$f" ] && chmod 600 "$f"
 done
 success "Directory structure created (${#dirs[@]} directories)"
 
@@ -576,7 +581,11 @@ echo ""
 echo -e "${BOLD}Everything else can wait until you need it:${NC}"
 echo -e "  Email, memory search and file indexing are ${BOLD}off${NC} until you set them up."
 echo -e "  Ask $AGENT_NAME to walk you through any of them — that is what it is for."
-echo -e "  Credentials go in ${CYAN}brain/credentials.yaml${NC}, which is git-ignored."
+echo -e "  Mailbox passwords belong in the vault, not in a file the agent can read:"
+echo -e "    ${CYAN}aim-secret set LOLA_MAIL_PASSWORD${NC}  then put ${CYAN}password_secret: LOLA_MAIL_PASSWORD${NC} in"
+echo -e "    ${CYAN}brain/credentials.yaml${NC} (git-ignored, owner-only). Existing plaintext passwords:"
+echo -e "    ${CYAN}python3 tools/migrate_credentials.py --apply${NC}"
+echo -e "  Files the agent may email go in ${CYAN}outbox/${NC}; nothing else can be attached."
 echo ""
 echo -e "${BOLD}Want to launch it by typing one word?${NC}"
 echo -e "  ${CYAN}$SCRIPT_DIR/scripts/make-launcher.sh $TARGET_DIR${NC}"

@@ -29,6 +29,15 @@ def get_home() -> str:
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
+def _credentials_path(paths: Dict[str, Any], home: str) -> str:
+    """brain/credentials.yaml, or the older default name if only that file exists."""
+    if paths.get("credentials"):
+        return _resolve_path(paths["credentials"], home)
+    new = _resolve_path("brain/credentials.yaml", home)
+    old = _resolve_path("brain/companies-credentials.yaml", home)
+    return old if (not os.path.exists(new) and os.path.exists(old)) else new
+
+
 def load_config() -> Dict[str, Any]:
     """Load lolabot.yaml config, with caching."""
     global _config_cache
@@ -55,7 +64,7 @@ def load_config() -> Dict[str, Any]:
     # Resolve all paths
     paths = config.get("paths", {})
     config["_resolved"] = {
-        "credentials": _resolve_path(paths.get("credentials", "brain/companies-credentials.yaml"), home),
+        "credentials": _credentials_path(paths, home),
         "emails_dir": _resolve_path(paths.get("emails_dir", "emails"), home),
         "indexes_dir": _resolve_path(paths.get("indexes_dir", "indexes"), home),
         "memory_dir": _resolve_path(paths.get("memory_dir", "memory"), home),

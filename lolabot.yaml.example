@@ -22,6 +22,10 @@ paths:
 
 # Email configuration
 email:
+  # Folders an email may attach files from (relative to LOLABOT_HOME, or absolute). Nothing else can be
+  # attached, and names that look like secrets (keys, .env, credentials) are always refused.
+  attachment_dirs: ["outbox"]
+  attachment_max_mb: 25
   accounts:
     # - address: "you@example.com"
     #   config_key: "you_example"
