@@ -418,3 +418,18 @@ python -m pytest tests/test_email_sanitizer.py -v
 - Sender auth verification (verified, spoofed, quarantine, not_applicable for external)
 - Auth integration (operator+valid auth, spoofed downgrade, quarantine body wipe, format summaries)
 - Integration (full round-trip, JSON serialization, format_security_summary output)
+
+## Outgoing mail: attachments and passwords (v1.1.0)
+
+**Attachments.** The mail client only attaches files from the folders listed in `email.attachment_dirs` in `lolabot.yaml` (default: `outbox/`). Anything else is refused before the client connects to the mail server: files outside those folders, symlinks that lead out of them, the credentials file, anything in `.ssh`, `.aws` and similar folders, and file names that look like secrets (`id_rsa`, `*.pem`, `.env`, `*credential*`, `*secret*`, `*password*`, `*token*`). A missing file is an error, not a silent skip, and one bad file refuses the whole send. The size limit is `email.attachment_max_mb` (default 25). The allowlist lives in `lolabot.yaml`, which the agent can edit, so this stops mistakes and prompt injection, not an agent that is already fully compromised.
+
+**Passwords.** Keep the mailbox password in the vault, not in the credentials file:
+
+```bash
+aim-secret set LOLA_MAIL_PASSWORD        # you type it; the agent never sees it
+# brain/credentials.yaml
+#   password_secret: LOLA_MAIL_PASSWORD
+python3 tools/migrate_credentials.py --apply   # moves existing plaintext passwords into the vault
+```
+
+`tools/email.sh` then runs the mail client under `aim-secret exec`, which puts the password in the process environment and scrubs it from the output. A plaintext `password:` still works but prints a warning, and the credentials file is set to owner-only (600) whenever it is found readable by others. `aim-secret` ships with AI Maestro (`scripts/aim-secret.mjs`).
