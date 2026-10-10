@@ -52,7 +52,8 @@ def allowed_roots(home: str, dirs: Optional[Iterable[str]] = None) -> List[Path]
 
 
 def check_attachments(paths: Iterable[str], home: str, dirs: Optional[Iterable[str]] = None,
-                      max_mb: float = DEFAULT_MAX_MB, credentials_file: Optional[str] = None) -> List[Path]:
+                      max_mb: float = DEFAULT_MAX_MB, credentials_file: Optional[str] = None,
+                      hint: str = "ask the owner to add the folder to the allowed attachment folders") -> List[Path]:
     """Return resolved paths that may be attached, or raise AttachmentRefused with every problem."""
     roots = allowed_roots(home, dirs)
     cred = Path(credentials_file).resolve() if credentials_file else None
@@ -71,7 +72,7 @@ def check_attachments(paths: Iterable[str], home: str, dirs: Optional[Iterable[s
         if not any(_inside(p, r) for r in roots):
             where = ", ".join(str(r) for r in roots) or "(none configured)"
             problems.append(f"{shown}: outside the allowed attachment folders ({where}). "
-                            f"Copy the file there first, or add its folder to email.attachment_dirs in lolabot.yaml")
+                            f"Copy the file there first, or {hint}")
             continue
         if cred is not None and p == cred:
             problems.append(f"{shown}: this is the credentials file")

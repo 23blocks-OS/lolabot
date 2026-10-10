@@ -80,6 +80,13 @@ class TestAttachmentGuard:
             check_attachments([str(other)], str(home))
         assert 'outside the allowed' in str(e.value)
 
+    def test_hint_is_configurable(self, tmp_path):
+        home = tmp_path / 'h'; (home / 'outbox').mkdir(parents=True)
+        other = tmp_path / 'n.txt'; other.write_text('x')
+        with pytest.raises(AttachmentRefused) as e:
+            check_attachments([str(other)], str(home), hint='edit ATTACHMENT_DIRS in tools/email_client.py')
+        assert 'ATTACHMENT_DIRS' in str(e.value) and 'lolabot.yaml' not in str(e.value)
+
     def test_traversal_is_refused(self, tmp_path):
         home = tmp_path / 'h'; (home / 'outbox').mkdir(parents=True); (home / 'brain').mkdir()
         (home / 'brain' / 'x.txt').write_text('x')
@@ -183,7 +190,7 @@ class TestVaultPasswords:
         r = run_py(home, ['secrets-needed'])
         assert r.returncode == 2
 
-    def test_plaintext_password_still_works_but_warns(self, tmp_path):
+    def test_plaintext_password_still_works_and_routine_runs_stay_quiet(self, tmp_path):
         home, _ = make_instance(tmp_path, '''
             email_accounts:
               me:
@@ -193,8 +200,11 @@ class TestVaultPasswords:
                 smtp_server: invalid.invalid
         ''')
         r = run_py(home, ['check', 'me@example.com'])
-        assert 'plaintext password' in r.stderr
+        assert 'Warning' not in r.stderr and 'migrate_credentials' not in r.stderr   # no noise in cron logs
         assert 'plaintext-pw-123' not in r.stdout + r.stderr
+        a = run_py(home, ['accounts'])
+        assert 'still keep a plaintext password' in a.stdout
+        assert 'plaintext-pw-123' not in a.stdout + a.stderr
 
     def test_loose_permissions_are_tightened(self, tmp_path):
         home, cred = make_instance(tmp_path, CREDS_SECRET)
