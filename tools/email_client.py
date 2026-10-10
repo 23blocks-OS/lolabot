@@ -78,7 +78,6 @@ ACCOUNT_MAP = {a['address']: a['config_key'] for a in _accounts if 'address' in 
 
 
 SECRET_NAME_RE = re.compile(r'^[A-Z][A-Z0-9_]{0,63}$')
-_plaintext_warned = False
 
 
 def _tighten_permissions(path: str) -> None:
@@ -127,9 +126,19 @@ def secret_names_needed() -> List[str]:
     return sorted(names)
 
 
+def plaintext_password_note() -> None:
+    """One line in the account listing, so routine runs and cron logs stay quiet."""
+    try:
+        n = sum(1 for a in load_credentials().values() if isinstance(a, dict) and a.get('password') and not a.get('password_secret'))
+    except SystemExit:
+        return
+    if n:
+        print(f"\nNote: {n} account(s) still keep a plaintext password in {CONFIG_FILE}. "
+              f"Move them into the vault: python3 tools/migrate_credentials.py --file {CONFIG_FILE} --apply")
+
+
 def password_for(config: Dict[str, Any]) -> str:
     """The mailbox password: from the vault (via aim-secret exec) or, as a fallback, the file."""
-    global _plaintext_warned
     name = config.get('password_secret')
     if name:
         if not SECRET_NAME_RE.match(str(name)):
@@ -145,10 +154,6 @@ def password_for(config: Dict[str, Any]) -> str:
     if not value:
         print("Error: this account has no password or password_secret", file=sys.stderr)
         sys.exit(1)
-    if not _plaintext_warned:
-        _plaintext_warned = True
-        print("Warning: a plaintext password is stored in the credentials file, where the agent can read it. "
-              "Move it into the vault: python3 tools/migrate_credentials.py --apply", file=sys.stderr)
     return value
 
 
@@ -601,7 +606,8 @@ def cmd_send(account_email: str, to: List[str], subject: str, body: str,
                 attachments, home=_cfg.get('_home', ''),
                 dirs=_cfg.get('email', {}).get('attachment_dirs'),
                 max_mb=float(_cfg.get('email', {}).get('attachment_max_mb', 25)),
-                credentials_file=CONFIG_FILE)]
+                credentials_file=CONFIG_FILE,
+                hint="add its folder to email.attachment_dirs in lolabot.yaml")]
         except AttachmentRefused as e:
             print("Refusing to send: attachments not allowed:", file=sys.stderr)
             for problem in e.problems:
@@ -1040,6 +1046,7 @@ def main():
         cmd_search(args.query, args.account, args.limit)
     elif args.command == "accounts":
         cmd_list_accounts()
+        plaintext_password_note()
     elif args.command == "quarantine":
         cmd_quarantine(args.account)
     elif args.command == "migrate-security":

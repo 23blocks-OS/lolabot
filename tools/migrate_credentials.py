@@ -3,6 +3,7 @@
 
   python3 tools/migrate_credentials.py            show what would change (no values printed)
   python3 tools/migrate_credentials.py --apply    store each password, verify it, then rewrite the file
+  python3 tools/migrate_credentials.py --file PATH [--apply]   use a specific credentials file (no config needed)
 
 Each password is handed to `aim-secret set NAME --stdin` on standard input, never as an argument.
 The file is rewritten only after every password has been stored and found again in the vault.
@@ -17,7 +18,6 @@ import tempfile
 from typing import Any, Callable, Dict, List, Tuple
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from config import get_path
 
 
 def secret_name_for(key: str) -> str:
@@ -67,8 +67,16 @@ def apply(path: str, set_secret: Callable[[str, str], bool] = aim_secret_set) ->
     return todo
 
 
+def credentials_path() -> str:
+    """--file PATH, or the instance's configured credentials file."""
+    if "--file" in sys.argv:
+        return os.path.abspath(sys.argv[sys.argv.index("--file") + 1])
+    from config import get_path
+    return get_path("credentials")
+
+
 def main() -> int:
-    path = get_path("credentials")
+    path = credentials_path()
     if not os.path.exists(path):
         print(f"No credentials file at {path}")
         return 1
