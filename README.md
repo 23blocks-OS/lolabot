@@ -147,6 +147,10 @@ lolabot includes defense-in-depth for AI assistants:
 - `uv` (recommended) or `pip`
 - Python packages: `memvid-sdk`, `pyyaml`, `pillow-heif`
 
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md). Current release: **v1.2.0** (2026-10-14).
+
 ## License
 
 MIT — [23blocks Inc.](https://23blocks.com)
