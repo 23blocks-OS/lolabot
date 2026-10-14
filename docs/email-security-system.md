@@ -74,6 +74,8 @@ tools/email.sh read assistant@example.com <uid>
 
 Parses headers (From, To, CC, Subject, Date, Message-ID), extracts the body (plain text + HTML) via `get_email_body()`, extracts attachments, then calls `sanitize_email()` before returning.
 
+A `text/calendar` part (an Outlook or Google invitation, often sent with no `text/plain` sibling) is rendered into the plain text body by `calendar_summary()`: method, event, when, where, organizer, attendees, description. The raw part is saved as `invite.ics` in the attachments folder so the event can be imported. Before this (2026-10-14) an invitation read as an empty body.
+
 ### 3. Attachment Extraction (`extract_attachments()`)
 
 For each attachment in the MIME structure, the function calls `assess_attachment(filename)` before deciding whether to save:

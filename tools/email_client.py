@@ -193,51 +193,153 @@ def decode_mime_header(header_value: str) -> str:
     return ' '.join(decoded_parts)
 
 
+def _decode_part(part: email.message.Message) -> str:
+    """Decode one MIME part to text; empty string if it has no payload."""
+    payload = part.get_payload(decode=True)
+    if not payload:
+        return ""
+    charset = part.get_content_charset() or 'utf-8'
+    try:
+        return payload.decode(charset, errors='replace')
+    except (LookupError, TypeError):
+        return payload.decode('utf-8', errors='replace')
+
+
+def _ical_unfold(text: str) -> List[str]:
+    """Join folded iCalendar lines (a continuation line starts with a space or tab)."""
+    lines: List[str] = []
+    for raw in text.replace('\r\n', '\n').split('\n'):
+        if raw[:1] in (' ', '\t') and lines:
+            lines[-1] += raw[1:]
+        elif raw:
+            lines.append(raw)
+    return lines
+
+
+def _ical_datetime(value: str, params: Dict[str, str]) -> str:
+    """Render an iCalendar DTSTART/DTEND value for a person."""
+    value = value.strip()
+    tzid = params.get('TZID', '')
+    if value.endswith('Z'):
+        fmt = '%Y%m%dT%H%M%SZ'
+        label = 'UTC'
+    elif 'T' in value:
+        fmt = '%Y%m%dT%H%M%S'
+        label = tzid
+    else:
+        fmt = '%Y%m%d'
+        label = ''
+    try:
+        dt = datetime.strptime(value, fmt)
+    except ValueError:
+        return f"{value} {tzid}".strip()
+    out = dt.strftime('%a %Y-%m-%d %H:%M') if 'T' in value else dt.strftime('%a %Y-%m-%d (all day)')
+    return f"{out} {label}".strip()
+
+
+def calendar_summary(ics_text: str) -> str:
+    """Turn a text/calendar part into a few readable lines.
+
+    Outlook and Google send invitations as a text/calendar part, often with no
+    text/plain sibling. Without this the message reads as empty. Only the
+    fields a person needs are kept; the raw .ics is saved as an attachment.
+    """
+    method = ''
+    events: List[Dict[str, Any]] = []
+    current: Optional[Dict[str, Any]] = None
+    for line in _ical_unfold(ics_text):
+        if ':' not in line:
+            continue
+        head, value = line.split(':', 1)
+        name, *param_parts = head.split(';')
+        name = name.upper()
+        params = {}
+        for p in param_parts:
+            if '=' in p:
+                k, v = p.split('=', 1)
+                params[k.upper()] = v.strip('"')
+        if name == 'METHOD':
+            method = value.strip().upper()
+        elif name == 'BEGIN' and value.strip().upper() == 'VEVENT':
+            current = {'attendees': []}
+        elif name == 'END' and value.strip().upper() == 'VEVENT' and current is not None:
+            events.append(current)
+            current = None
+        elif current is not None:
+            if name in ('DTSTART', 'DTEND'):
+                current[name] = _ical_datetime(value, params)
+            elif name == 'ATTENDEE':
+                who = params.get('CN') or value.replace('mailto:', '').replace('MAILTO:', '')
+                status = params.get('PARTSTAT', '')
+                current['attendees'].append(f"{who} ({status.lower()})" if status else who)
+            elif name == 'ORGANIZER':
+                current[name] = params.get('CN') or value.replace('mailto:', '').replace('MAILTO:', '')
+            elif name in ('SUMMARY', 'LOCATION', 'DESCRIPTION', 'STATUS'):
+                clean = value.replace('\\n', '\n').replace('\\,', ',').replace('\\;', ';').strip()
+                if clean:
+                    current[name] = clean
+
+    labels = {'REQUEST': 'Calendar invitation', 'REPLY': 'Calendar reply',
+              'CANCEL': 'Calendar cancellation', 'PUBLISH': 'Calendar event'}
+    out = [f"[{labels.get(method, 'Calendar')}]"]
+    for ev in events:
+        if 'SUMMARY' in ev:
+            out.append(f"Event:     {ev['SUMMARY']}")
+        if 'DTSTART' in ev:
+            when = ev['DTSTART'] + (f"  to  {ev['DTEND']}" if 'DTEND' in ev else '')
+            out.append(f"When:      {when}")
+        if 'LOCATION' in ev:
+            out.append(f"Where:     {ev['LOCATION']}")
+        if 'ORGANIZER' in ev:
+            out.append(f"Organizer: {ev['ORGANIZER']}")
+        if ev['attendees']:
+            out.append(f"Attendees: {', '.join(ev['attendees'])}")
+        if 'STATUS' in ev:
+            out.append(f"Status:    {ev['STATUS']}")
+        if 'DESCRIPTION' in ev:
+            out.append("")
+            out.append(ev['DESCRIPTION'])
+        out.append("")
+    if not events:
+        out.append("(no event in the calendar part)")
+    return '\n'.join(out).rstrip() + '\n'
+
+
 def get_email_body(msg: email.message.Message) -> tuple[str, str]:
-    """Extract plain text and HTML body from email message."""
+    """Extract plain text and HTML body from email message.
+
+    A text/calendar part (an invitation) is rendered into the plain text body,
+    after any text/plain part, so an invite with no text sibling is not empty.
+    """
     body_text = ""
     body_html = ""
+    calendar_text = ""
 
-    if msg.is_multipart():
-        for part in msg.walk():
-            content_type = part.get_content_type()
-            content_disposition = str(part.get("Content-Disposition", ""))
+    # walk() yields the message itself for a single-part message
+    for part in msg.walk():
+        if part.is_multipart():
+            continue
+        content_type = part.get_content_type()
+        content_disposition = str(part.get("Content-Disposition", ""))
 
-            if "attachment" in content_disposition:
-                continue
+        if "attachment" in content_disposition:
+            continue
 
-            try:
-                payload = part.get_payload(decode=True)
-                if payload:
-                    charset = part.get_content_charset() or 'utf-8'
-                    try:
-                        text = payload.decode(charset, errors='replace')
-                    except (LookupError, TypeError):
-                        text = payload.decode('utf-8', errors='replace')
-
-                    if content_type == "text/plain" and not body_text:
-                        body_text = text
-                    elif content_type == "text/html" and not body_html:
-                        body_html = text
-            except Exception:
-                pass
-    else:
-        content_type = msg.get_content_type()
         try:
-            payload = msg.get_payload(decode=True)
-            if payload:
-                charset = msg.get_content_charset() or 'utf-8'
-                try:
-                    text = payload.decode(charset, errors='replace')
-                except (LookupError, TypeError):
-                    text = payload.decode('utf-8', errors='replace')
-
-                if content_type == "text/plain":
-                    body_text = text
-                elif content_type == "text/html":
-                    body_html = text
+            text = _decode_part(part)
+            if not text:
+                continue
+            if content_type == "text/plain" and not body_text:
+                body_text = text
+            elif content_type == "text/html" and not body_html:
+                body_html = text
+            elif content_type == "text/calendar" and not calendar_text:
+                calendar_text = calendar_summary(text)
         except Exception:
             pass
+
+    if calendar_text:
+        body_text = f"{body_text.rstrip()}\n\n{calendar_text}" if body_text.strip() else calendar_text
 
     return body_text, body_html
 
@@ -250,44 +352,65 @@ def extract_attachments(msg: email.message.Message, email_id: str, account_email
     """
     attachments = []
     attach_dir = Path(EMAILS_DIR) / account_email / "attachments" / email_id
+    calendar_n = 0
 
-    if msg.is_multipart():
-        for part in msg.walk():
-            content_disposition = str(part.get("Content-Disposition", ""))
+    # walk() also yields a single-part message itself
+    for part in msg.walk():
+        if part.is_multipart():
+            continue
+        content_disposition = str(part.get("Content-Disposition", ""))
 
-            if "attachment" in content_disposition:
-                filename = part.get_filename()
-                if filename:
-                    filename = decode_mime_header(filename)
-                    # Sanitize filename characters
-                    filename = re.sub(r'[<>:"/\\|?*]', '_', filename)
+        # An inline calendar part is the invitation itself; keep the .ics
+        # so the event can be imported into a calendar.
+        if part.get_content_type() == "text/calendar" and "attachment" not in content_disposition:
+            payload = part.get_payload(decode=True)
+            if payload:
+                calendar_n += 1
+                attach_dir.mkdir(parents=True, exist_ok=True)
+                filename = "invite.ics" if calendar_n == 1 else f"invite-{calendar_n}.ics"
+                filepath = attach_dir / filename
+                with open(filepath, 'wb') as f:
+                    f.write(payload)
+                attachments.append({
+                    "filename": filename,
+                    "path": str(filepath.relative_to(Path(EMAILS_DIR) / account_email)),
+                    "size": len(payload)
+                })
+            continue
 
-                    # Check attachment safety before saving
-                    risk = assess_attachment(filename)
+        if "attachment" in content_disposition:
+            filename = part.get_filename()
+            if filename:
+                filename = decode_mime_header(filename)
+                # Sanitize filename characters
+                filename = re.sub(r'[<>:"/\\|?*]', '_', filename)
 
-                    payload = part.get_payload(decode=True)
-                    if payload:
-                        if risk["risk"] == "blocked":
-                            # Record but do NOT save dangerous files
-                            attachments.append({
-                                "filename": filename,
-                                "path": "(blocked - not saved)",
-                                "size": len(payload),
-                                "blocked": True,
-                                "block_reason": risk["reason"]
-                            })
-                        else:
-                            attach_dir.mkdir(parents=True, exist_ok=True)
-                            filepath = attach_dir / filename
+                # Check attachment safety before saving
+                risk = assess_attachment(filename)
 
-                            with open(filepath, 'wb') as f:
-                                f.write(payload)
+                payload = part.get_payload(decode=True)
+                if payload:
+                    if risk["risk"] == "blocked":
+                        # Record but do NOT save dangerous files
+                        attachments.append({
+                            "filename": filename,
+                            "path": "(blocked - not saved)",
+                            "size": len(payload),
+                            "blocked": True,
+                            "block_reason": risk["reason"]
+                        })
+                    else:
+                        attach_dir.mkdir(parents=True, exist_ok=True)
+                        filepath = attach_dir / filename
 
-                            attachments.append({
-                                "filename": filename,
-                                "path": str(filepath.relative_to(Path(EMAILS_DIR) / account_email)),
-                                "size": len(payload)
-                            })
+                        with open(filepath, 'wb') as f:
+                            f.write(payload)
+
+                        attachments.append({
+                            "filename": filename,
+                            "path": str(filepath.relative_to(Path(EMAILS_DIR) / account_email)),
+                            "size": len(payload)
+                        })
 
     return attachments
 
