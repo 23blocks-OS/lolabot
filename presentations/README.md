@@ -18,6 +18,7 @@ somebody stood in a room and defended this in front of people who could ask hard
 | event | date | talk | |
 |---|---|---|---|
 | **RMAIIG** — Rocky Mountain AI Interest Group, Broomfield CO | 2026-09-17 | *Running a business on an AI Chief of Staff* | [deck](2026-09-17-rmaiig/) |
+| **RMAIIG** — Rocky Mountain AI Interest Group, CU Boulder | 2026-10-13 | *AI and Ghosts* — fourteen months with 160 agents, and what it did to the humans | [deck](2026-10-13-rmaiig-ai-and-ghosts/) |
 
 ## Arrangement
 
