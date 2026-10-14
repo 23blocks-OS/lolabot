@@ -422,6 +422,7 @@ All inbound email passes through `tools/email_sanitizer.py` before reaching the 
 - **Docs:** `docs/email-security-system.md` - Full system documentation
 - **Migration:** `tools/email.sh migrate-security` - Add security metadata to previously cached emails
 - **Messages Jail:** `tools/email.sh quarantine` - List quarantined emails (spoofed operator addresses with no auth)
+- **Delivery record:** every send appends to `emails/<account>/sent-log.jsonl` (SHA-256, Message-ID, attachments, Sent-folder check). Report "sent and verified" only from the client's `✓ Verified` line; `tools/email.sh sent-log`, `tools/email.sh verify <account> <id>`
 - **IMPORTANT:** Operator trust requires BOTH address match AND authentication. Emails claiming operator address with no auth headers are quarantined (body destroyed). Emails with failed auth are treated as spoofed (external + dangerous).
 
 ## Email Access

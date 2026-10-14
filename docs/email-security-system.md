@@ -435,3 +435,26 @@ python3 tools/migrate_credentials.py --apply   # moves existing plaintext passwo
 ```
 
 `tools/email.sh` then runs the mail client under `aim-secret exec`, which puts the password in the process environment and scrubs it from the output. A plaintext `password:` still works but prints a warning, and the credentials file is set to owner-only (600) whenever it is found readable by others. `aim-secret` ships with AI Maestro (`scripts/aim-secret.mjs`).
+
+## Outgoing mail: the delivery record (v1.2.0)
+
+Some emails matter, and "I sent it" is not a record. Every `send`, `reply` and `forward` now appends one JSON line to `emails/<account>/sent-log.jsonl`:
+
+| field | |
+|---|---|
+| `event` | `sent`, `failed`, or a later `verified` line that refers to a `sent` line by `ref` |
+| `id` | first 12 hex chars of the SHA-256; also the id of the cached copy in `emails/<account>/sent/` |
+| `sent_at`, `account`, `to`, `cc`, `subject`, `message_id`, `in_reply_to` | what went out |
+| `sha256`, `size` | of the exact bytes handed to the SMTP server |
+| `attachments[]` | `filename`, `size`, `sha256` of each file sent |
+| `smtp` | server, port, `accepted` recipients, `refused` recipients with the server's reply |
+| `sent_folder` | `verified`, `folder`, `uid`, `how` (`server` or `appended`), `checked_at`, `error` |
+
+The client sets its own `Message-ID` (`make_msgid` on the account's domain), sends, then opens the Sent folder over IMAP (the mailbox flagged `\Sent`, else a common name) and searches for that Message-ID, three tries two seconds apart. Gmail files a copy of everything its SMTP server sends; a server that does not gets the exact bytes appended to its Sent folder, and the record says `how: appended`. A send the SMTP server rejects is recorded as `failed` and the command exits 1.
+
+```bash
+tools/email.sh sent-log [--account a@example.com] [-n 20]   # ✓ verified / ⚠ not, oldest first
+tools/email.sh verify a@example.com <record-id>            # re-check; appends a 'verified' line
+```
+
+The agent's rule, in `skills/mail-handler/SKILL.md`: report "sent and verified" only from the client's `✓ Verified` line; on `⚠ Not verified` run `verify` once, then say what is true; never resend to "make sure". The log is append-only and holds no secrets; keep it with the mail, it is the proof. Tests: `tests/test_delivery_record.py`.

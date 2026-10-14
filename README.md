@@ -105,7 +105,7 @@ your-assistant/          # Your PA instance (private, never pushed)
 
 | Tool | Purpose |
 |------|---------|
-| `tools/email_client.py` | Read, send, reply, forward, search emails |
+| `tools/email_client.py` | Read, send, reply, forward, search emails; every send leaves a verified delivery record (`sent-log`, `verify`) |
 | `tools/email_sanitizer.py` | Content security for inbound email |
 | `tools/memory_indexer.py` | Semantic memory with Memvid + SQLite |
 | `tools/file_indexer.py` | Multi-location file discovery and search |
@@ -117,7 +117,7 @@ your-assistant/          # Your PA instance (private, never pushed)
 | Skill | Purpose |
 |-------|---------|
 | `file-processing` | Document classification, organization, indexing |
-| `mail-handler` | Safe email interaction rules and trust model |
+| `mail-handler` | Safe email interaction rules, trust model, what to report after a send |
 | `pa-memory-delegation` | User memory management (facts, events, learnings) |
 | `pa-onboarding` | First-run charter — name, role, standing work, how success is measured |
 

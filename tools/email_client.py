@@ -29,7 +29,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
 from email.header import decode_header
-from email.utils import parsedate_to_datetime, formatdate
+from email.utils import parsedate_to_datetime, formatdate, make_msgid
 import json
 import hashlib
 from datetime import datetime, timedelta
@@ -37,6 +37,7 @@ from pathlib import Path
 from typing import Optional, List, Dict, Any
 import re
 import ssl
+import time
 
 try:
     import yaml
@@ -719,10 +720,255 @@ def print_email(email_data: Dict[str, Any]):
     print("=" * 70 + "\n")
 
 
+# ---------------------------------------------------------------------------
+# Delivery record
+#
+# Every send appends one line to emails/<account>/sent-log.jsonl: what was sent, to
+# whom, the SHA-256 of the exact bytes handed to the SMTP server, what the server
+# accepted, and whether the message was then found in the account's Sent folder.
+# The file is append-only; a later `verify` adds a line that refers to the first.
+# Nothing in it is a secret, so it can be read, grepped and kept.
+# ---------------------------------------------------------------------------
+
+SENT_LOG_NAME = "sent-log.jsonl"
+SENT_FOLDER_NAMES = ("[Gmail]/Sent Mail", "Sent", "Sent Items", "Sent Messages", "INBOX.Sent")
+
+
+def sent_log_path(account_email: str) -> Path:
+    return Path(EMAILS_DIR) / account_email / SENT_LOG_NAME
+
+
+def _sha256(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def build_delivery_record(raw: bytes, account_email: str, to: List[str], cc: List[str],
+                          subject: str, attachments: List[str], smtp: Dict[str, Any]) -> Dict[str, Any]:
+    """The 'sent' line of the delivery log. `raw` is exactly what went to the server."""
+    msg = email.message_from_bytes(raw)
+    files = []
+    for f in attachments or []:
+        if os.path.exists(f):
+            with open(f, 'rb') as fh:
+                data = fh.read()
+            files.append({"filename": os.path.basename(f), "size": len(data), "sha256": _sha256(data)})
+    digest = _sha256(raw)
+    return {
+        "event": "sent",
+        "id": digest[:12],
+        "sent_at": datetime.now().astimezone().isoformat(timespec='seconds'),
+        "account": account_email,
+        "to": to,
+        "cc": cc or [],
+        "subject": subject,
+        "message_id": msg.get('Message-ID', ''),
+        "in_reply_to": msg.get('In-Reply-To', ''),
+        "sha256": digest,
+        "size": len(raw),
+        "attachments": files,
+        "smtp": smtp,
+        "sent_folder": {"verified": False, "folder": None, "uid": None, "how": None, "checked_at": None},
+    }
+
+
+def parse_list_line(line: bytes) -> tuple[List[str], str]:
+    """Split an IMAP LIST response line into (attributes, mailbox name)."""
+    text = line.decode('utf-8', errors='replace')
+    m = re.match(r'\((?P<attrs>[^)]*)\)\s+(?:"[^"]*"|NIL|\S+)\s+(?P<name>.+)$', text)
+    if not m:
+        return [], ''
+    attrs = [a.lower() for a in m.group('attrs').split()]
+    name = m.group('name').strip()
+    if name.startswith('"') and name.endswith('"'):
+        name = name[1:-1]
+    return attrs, name
+
+
+def find_sent_folder(mail: imaplib.IMAP4) -> Optional[str]:
+    """The account's Sent folder: by the \\Sent special-use flag, else by common names."""
+    try:
+        typ, data = mail.list()
+    except Exception:
+        return None
+    if typ != 'OK':
+        return None
+    names = []
+    for line in data or []:
+        if not line:
+            continue
+        attrs, name = parse_list_line(line)
+        if not name:
+            continue
+        if '\\sent' in attrs:
+            return name
+        names.append(name)
+    for candidate in SENT_FOLDER_NAMES:
+        if candidate in names:
+            return candidate
+    return None
+
+
+def _quote_mailbox(name: str) -> str:
+    return '"' + name.replace('\\', '\\\\').replace('"', '\\"') + '"'
+
+
+def verify_in_sent(config: Dict[str, Any], message_id: str, raw: Optional[bytes] = None,
+                   attempts: int = 3, delay: float = 2.0) -> Dict[str, Any]:
+    """Look for `message_id` in the Sent folder.
+
+    Gmail files a copy of every message its SMTP server sends; other servers do
+    not. If the copy is not there after `attempts` and `raw` is given, the exact
+    bytes are appended to the Sent folder so a copy exists on the server, then the
+    search runs once more. `how` says which: 'server' or 'appended'.
+    """
+    result = {"verified": False, "folder": None, "uid": None, "how": None,
+              "checked_at": datetime.now().astimezone().isoformat(timespec='seconds'), "error": None}
+    if not message_id:
+        result["error"] = "no Message-ID on the message"
+        return result
+    try:
+        mail = connect_imap(config)
+    except SystemExit:
+        result["error"] = "IMAP connection failed"
+        return result
+    try:
+        folder = find_sent_folder(mail)
+        if not folder:
+            result["error"] = "no Sent folder found on the server"
+            return result
+        result["folder"] = folder
+
+        def search() -> Optional[str]:
+            typ, _ = mail.select(_quote_mailbox(folder), readonly=True)
+            if typ != 'OK':
+                return None
+            typ, data = mail.uid('SEARCH', None, 'HEADER', 'Message-ID', message_id)
+            if typ == 'OK' and data and data[0]:
+                return data[0].split()[-1].decode()
+            return None
+
+        for i in range(max(1, attempts)):
+            uid = search()
+            if uid:
+                result.update(verified=True, uid=uid, how="server")
+                return result
+            if i < attempts - 1:
+                time.sleep(delay)
+
+        if raw is not None:
+            typ, _ = mail.append(_quote_mailbox(folder), '(\\Seen)', imaplib.Time2Internaldate(time.time()), raw)
+            if typ == 'OK':
+                uid = search()
+                if uid:
+                    result.update(verified=True, uid=uid, how="appended")
+                    return result
+                result["error"] = "appended a copy, but the search did not find it yet"
+            else:
+                result["error"] = "server refused to file a copy in the Sent folder"
+        else:
+            result["error"] = "not found in the Sent folder"
+        return result
+    except Exception as e:
+        result["error"] = f"{type(e).__name__}: {e}"
+        return result
+    finally:
+        try:
+            mail.logout()
+        except Exception:
+            pass
+
+
+def append_sent_log(account_email: str, record: Dict[str, Any]) -> Path:
+    path = sent_log_path(account_email)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, 'a', encoding='utf-8') as f:
+        f.write(json.dumps(record, ensure_ascii=False) + '\n')
+    return path
+
+
+def read_sent_log(account_email: str) -> List[Dict[str, Any]]:
+    """Records in send order, each with its latest verification folded in."""
+    path = sent_log_path(account_email)
+    if not path.exists():
+        return []
+    by_id: Dict[str, Dict[str, Any]] = {}
+    order: List[str] = []
+    with open(path, encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rec = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if rec.get("event") == "sent":
+                by_id[rec["id"]] = rec
+                order.append(rec["id"])
+            elif rec.get("event") == "verified" and rec.get("ref") in by_id:
+                by_id[rec["ref"]]["sent_folder"] = rec.get("sent_folder", {})
+    return [by_id[i] for i in order]
+
+
+def format_delivery(record: Dict[str, Any]) -> str:
+    """The lines an agent reports back after a send."""
+    sf = record.get("sent_folder") or {}
+    smtp = record.get("smtp") or {}
+    lines = []
+    if smtp.get("refused"):
+        lines.append(f"⚠ Server refused: {', '.join(smtp['refused'].keys())}")
+    lines.append(f"  Message-ID: {record.get('message_id', '')}")
+    lines.append(f"  SHA-256:    {record.get('sha256', '')}")
+    for a in record.get("attachments") or []:
+        lines.append(f"  Attachment: {a['filename']} ({a['size']} bytes, sha256 {a['sha256'][:12]}…)")
+    if sf.get("verified") and sf.get("how") == "server":
+        lines.append(f"✓ Verified: copy in Sent folder '{sf['folder']}' (uid {sf['uid']})")
+    elif sf.get("verified"):
+        lines.append(f"✓ Verified: copy filed in Sent folder '{sf['folder']}' by this client (uid {sf['uid']})")
+    else:
+        lines.append(f"⚠ Not verified in Sent folder: {sf.get('error') or 'not checked'}. "
+                     f"Re-check: email.sh verify {record.get('account')} {record.get('id')}")
+    lines.append(f"  Record:     {sent_log_path(record.get('account', '')).relative_to(Path(EMAILS_DIR).parent) if record.get('account') else SENT_LOG_NAME} id {record.get('id')}")
+    return '\n'.join(lines)
+
+
+def cmd_verify(account_email: str, ref: str):
+    """Re-check one sent message (by record id or Message-ID) against the Sent folder."""
+    records = read_sent_log(account_email)
+    match = next((r for r in records if r["id"] == ref or r.get("message_id") == ref), None)
+    if not match:
+        print(f"No record {ref} in {sent_log_path(account_email)}")
+        sys.exit(1)
+    config = get_account_config(account_email)
+    result = verify_in_sent(config, match.get("message_id", ""), raw=None, attempts=1)
+    append_sent_log(account_email, {"event": "verified", "ref": match["id"], "sent_folder": result})
+    match["sent_folder"] = result
+    print(f"{match['sent_at']}  {match['subject']}  -> {', '.join(match['to'])}")
+    print(format_delivery(match))
+    sys.exit(0 if result["verified"] else 1)
+
+
+def cmd_sent_log(account_email: Optional[str] = None, limit: int = 20):
+    """List delivery records, newest last."""
+    accounts = [account_email] if account_email else list(ACCOUNT_MAP.keys())
+    rows = []
+    for acct in accounts:
+        rows.extend(read_sent_log(acct))
+    rows.sort(key=lambda r: r.get("sent_at", ""))
+    if not rows:
+        print("No delivery records yet.")
+        return
+    for r in rows[-limit:]:
+        sf = r.get("sent_folder") or {}
+        mark = "✓" if sf.get("verified") else "⚠"
+        att = f" +{len(r['attachments'])} file(s)" if r.get("attachments") else ""
+        print(f"{mark} {r['sent_at']}  {r['id']}  {r['account']} -> {', '.join(r['to'])}  | {r['subject']}{att}")
+
+
 def cmd_send(account_email: str, to: List[str], subject: str, body: str,
              cc: List[str] = None, attachments: List[str] = None,
              in_reply_to: str = None, references: str = None):
-    """Send an email."""
+    """Send an email, then record and verify the delivery (see the delivery record section)."""
     if attachments:
         try:
             attachments = [str(p) for p in check_attachments(
@@ -761,40 +1007,63 @@ def cmd_send(account_email: str, to: List[str], subject: str, body: str,
         msg['Cc'] = ', '.join(cc)
     msg['Subject'] = subject
     msg['Date'] = formatdate(localtime=True)
+    # Our own Message-ID: the delivery record and the Sent-folder check key on it.
+    msg['Message-ID'] = make_msgid(domain=account_email.split('@')[-1])
 
     if in_reply_to:
         msg['In-Reply-To'] = in_reply_to
     if references:
         msg['References'] = references
 
+    raw = msg.as_bytes()
+    recipients = to + (cc or [])
+    smtp_info = {"server": config.get('smtp_server'), "port": config.get('smtp_port', 587),
+                 "accepted": [], "refused": {}}
+
     # Send
     server = connect_smtp(config)
-
-    recipients = to + (cc or [])
     try:
-        server.sendmail(account_email, recipients, msg.as_string())
-        print(f"✓ Email sent from {account_email} to {', '.join(to)}")
-
-        # Save to sent folder cache
-        sent_data = {
-            "id": hashlib.md5(msg.as_string().encode()).hexdigest()[:12],
-            "message_id": msg.get('Message-ID', ''),
-            "from": account_email,
-            "to": to,
-            "cc": cc or [],
-            "subject": subject,
-            "date": datetime.now().isoformat(),
-            "body_text": body,
-            "body_html": "",
-            "attachments": [],
-            "synced_at": datetime.now().isoformat()
-        }
-        save_email_cache(sent_data, account_email, "sent")
-
+        refused = server.sendmail(account_email, recipients, raw)
     except smtplib.SMTPException as e:
-        print(f"✗ Failed to send: {e}")
-    finally:
         server.quit()
+        failed = build_delivery_record(raw, account_email, to, cc or [], subject, attachments, smtp_info)
+        failed.update(event="failed", error=f"{type(e).__name__}: {e}")
+        append_sent_log(account_email, failed)
+        print(f"✗ Failed to send: {e}")
+        print(f"  Recorded as failed: {sent_log_path(account_email)} id {failed['id']}")
+        sys.exit(1)
+    server.quit()
+
+    smtp_info["refused"] = {k: [str(x) for x in v] for k, v in (refused or {}).items()}
+    smtp_info["accepted"] = [r for r in recipients if r not in smtp_info["refused"]]
+    print(f"✓ Email sent from {account_email} to {', '.join(to)}")
+
+    record = build_delivery_record(raw, account_email, to, cc or [], subject, attachments, smtp_info)
+    record["sent_folder"] = verify_in_sent(config, record["message_id"], raw=raw)
+    append_sent_log(account_email, record)
+    print(format_delivery(record))
+
+    # Save to sent folder cache
+    sent_data = {
+        "id": record["id"],
+        "message_id": record["message_id"],
+        "from": account_email,
+        "to": to,
+        "cc": cc or [],
+        "subject": subject,
+        "date": datetime.now().isoformat(),
+        "body_text": body,
+        "body_html": "",
+        "attachments": [
+            {"filename": os.path.basename(f), "path": f}
+            for f in (attachments or [])
+            if os.path.exists(f)
+        ],
+        "sha256": record["sha256"],
+        "sent_folder": record["sent_folder"],
+        "synced_at": datetime.now().isoformat()
+    }
+    save_email_cache(sent_data, account_email, "sent")
 
 
 def cmd_reply(account_email: str, email_id: str, body: str, reply_all: bool = False, attachments: List[str] = None):
@@ -1137,6 +1406,15 @@ def main():
     # migrate-security
     subparsers.add_parser("migrate-security", help="Add security metadata to cached emails")
 
+    # sent-log / verify (delivery records)
+    p_log = subparsers.add_parser("sent-log", help="List delivery records (emails/<account>/sent-log.jsonl)")
+    p_log.add_argument("--account", help="Limit to specific account")
+    p_log.add_argument("-n", "--limit", type=int, default=20, help="Max records")
+
+    p_verify = subparsers.add_parser("verify", help="Re-check a sent message against the Sent folder")
+    p_verify.add_argument("account", help="Email account it was sent from")
+    p_verify.add_argument("ref", help="Record id or Message-ID")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -1174,6 +1452,10 @@ def main():
         cmd_quarantine(args.account)
     elif args.command == "migrate-security":
         cmd_migrate_security()
+    elif args.command == "sent-log":
+        cmd_sent_log(args.account, args.limit)
+    elif args.command == "verify":
+        cmd_verify(args.account, args.ref)
 
 
 if __name__ == "__main__":
