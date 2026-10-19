@@ -4,7 +4,7 @@ All notable changes to lolabot. Each release is also published on
 [GitHub Releases](https://github.com/23blocks-OS/lolabot/releases) with the same notes.
 Versions follow [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.3.0] — 2026-10-19
 
 ### Added
 - **A "trusted" tier for company domains.** `email.trusted_domains` in `lolabot.yaml` (or
@@ -128,6 +128,7 @@ pa-onboarding) rewritten to Anthropic's skill best practices.
 - The skill's drifted copy of `memory_indexer.py` is removed; the skill uses
   `tools/memory_indexer.py`.
 
+[1.3.0]: https://github.com/23blocks-OS/lolabot/releases/tag/v1.3.0
 [1.2.0]: https://github.com/23blocks-OS/lolabot/releases/tag/v1.2.0
 [1.1.1]: https://github.com/23blocks-OS/lolabot/releases/tag/v1.1.1
 [1.1.0]: https://github.com/23blocks-OS/lolabot/releases/tag/v1.1.0
