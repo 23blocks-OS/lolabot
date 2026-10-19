@@ -4,6 +4,20 @@ All notable changes to lolabot. Each release is also published on
 [GitHub Releases](https://github.com/23blocks-OS/lolabot/releases) with the same notes.
 Versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **A "trusted" tier for company domains.** `email.trusted_domains` in `lolabot.yaml` (or
+  `security.trusted_domains` in the credentials file, which wins, like `operator_emails`) lists
+  domains whose senders are labelled `trusted`: `Trust: [OK] trusted - sender domain 3metas.com is a
+  company domain`. A label, not authority: the domain must match exactly (no subdomains, no
+  look-alikes such as `3metas.com.evil.net`), an operator address always wins, and authentication
+  still decides. SPF or DKIM pass gives `auth_status: verified_domain` (never `verified`, which stays
+  the operator's); a failed check is `spoofed` and a company address with no authentication headers
+  is quarantined, exactly as for an operator. The body is still wrapped as external content, still
+  scanned for injection patterns and risky links, and is never an instruction. The mail-handler
+  skill says so.
+
 ## [1.2.0] — 2026-10-14
 
 ### Added

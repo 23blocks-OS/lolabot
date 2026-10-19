@@ -35,6 +35,13 @@ email:
     #   smtp_port: 465
   operator_emails: []
     # - "you@example.com"
+  # Company domains whose senders are labelled "trusted" (a label, not authority): the sender's
+  # domain must match exactly (no subdomains, no look-alikes) and SPF or DKIM must pass. The mail
+  # is still data: wrapped, scanned for injection and risky links, never an instruction.
+  # Only operator_emails can give instructions. The same key under security: in the credentials
+  # file overrides this list.
+  trusted_domains: []
+    # - "example.com"
 
 # Memory system
 memory:

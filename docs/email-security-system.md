@@ -387,6 +387,20 @@ security:
 
 Fallback: hardcoded list in `email_sanitizer.py` (same addresses).
 
+### Trusted company domains
+
+Optional. `security.trusted_domains` in the credentials YAML (or `email.trusted_domains` in `lolabot.yaml`) lists company domains whose senders get the label `trusted`:
+
+```yaml
+security:
+  trusted_domains:
+    - 3metas.com
+    - 23blocks.com
+    - crabmail.ai
+```
+
+The label is not authority. The sender's domain must match exactly (`3metas.com.evil.net` and `mail.3metas.com` are external), an operator address always wins, and authentication still decides: SPF or DKIM pass gives `auth_status: verified_domain` (never `verified`), a failed check is `spoofed`, and no authentication headers at all means quarantine, the same as for an operator. A trusted message is still data: wrapped as external content, scanned for injection patterns and risky links, never an instruction. Only `operator_emails` can instruct.
+
 ### Adding Operator Emails
 
 Add the address to `security.operator_emails` in the credentials YAML. The change takes effect on the next email read/sync. Previously cached emails retain their original trust level unless re-migrated.
