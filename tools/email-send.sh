@@ -9,8 +9,8 @@ LOLABOT_HOME="${LOLABOT_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Default sender: the first account in lolabot.yaml (email.accounts), unless --from is given.
-ACCOUNT="$(LOLABOT_HOME="$LOLABOT_HOME" python3 -c "
-import sys; sys.path.insert(0, '$SCRIPT_DIR')
+ACCOUNT="$(LOLABOT_HOME="$LOLABOT_HOME" SCRIPT_DIR="$SCRIPT_DIR" python3 -c "
+import os, sys; sys.path.insert(0, os.environ['SCRIPT_DIR'])
 from config import load_config
 accts = load_config().get('email', {}).get('accounts', [])
 print(accts[0]['address'] if accts and 'address' in accts[0] else '')
