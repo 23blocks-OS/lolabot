@@ -43,7 +43,7 @@ ask() {
             exit 1
         fi
         echo -e "${BOLD}$prompt${NC}: ${GREEN}$default${NC} (default)"
-        eval "$var_name=\$default"
+        printf -v "$var_name" '%s' "$default"
         return
     fi
 
@@ -54,12 +54,12 @@ ask() {
     fi
     read -r input
     if [[ -z "$input" && -n "$default" ]]; then
-        eval "$var_name=\$default"
+        printf -v "$var_name" '%s' "$default"
     elif [[ -z "$input" ]]; then
         error "This field is required."
         ask "$prompt" "$default" "$var_name"
     else
-        eval "$var_name=\$input"
+        printf -v "$var_name" '%s' "$input"
     fi
 }
 

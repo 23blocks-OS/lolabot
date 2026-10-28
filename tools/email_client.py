@@ -384,7 +384,9 @@ def extract_attachments(msg: email.message.Message, email_id: str, account_email
             if filename:
                 filename = decode_mime_header(filename)
                 # Sanitize filename characters
-                filename = re.sub(r'[<>:"/\\|?*]', '_', filename)
+                filename = re.sub(r'[<>:"/\\|?*\x00-\x1f]', '_', filename)
+                if filename.strip('. ') == '':
+                    filename = 'attachment'
 
                 # Check attachment safety before saving
                 risk = assess_attachment(filename)
@@ -403,6 +405,9 @@ def extract_attachments(msg: email.message.Message, email_id: str, account_email
                     else:
                         attach_dir.mkdir(parents=True, exist_ok=True)
                         filepath = attach_dir / filename
+                        # Belt and braces: never write outside this email's folder
+                        if attach_dir.resolve() not in filepath.resolve().parents:
+                            continue
 
                         with open(filepath, 'wb') as f:
                             f.write(payload)

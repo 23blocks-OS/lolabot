@@ -22,7 +22,12 @@ source "$VENV"
 SOURCE="${1:-$TRANSPORT}"
 OUTPUT="${2:-$DEFAULT_OUTPUT}"
 
-mkdir -p "$OUTPUT"
+if [ -L "$OUTPUT" ]; then
+    echo "Error: $OUTPUT is a symlink; refusing to write through it"
+    exit 1
+fi
+# Private directory: the default lives in a shared /tmp
+(umask 077; mkdir -p "$OUTPUT")
 
 # Converted JPGs are scratch files. Clean up old ones, but only in the default output
 # directory this script owns, never in a destination the caller chose.
@@ -33,21 +38,27 @@ fi
 convert_file() {
     local src="$1"
     local dest_dir="$2"
-    local basename=$(basename "$src")
-    local name="${basename%.*}"
-    local dest="$dest_dir/${name}.jpg"
+    local base name dest
+    base=$(basename "$src")
+    name="${base%.*}"
+    dest="$dest_dir/${name}.jpg"
 
-    python3 -c "
+    # Paths go in as arguments, never pasted into the Python source: file names
+    # come from outside and may contain quotes.
+    python3 - "$src" "$dest" "$MAX_WIDTH" "$QUALITY" "$base" "${name}.jpg" <<'PY'
+import sys
 from pillow_heif import register_heif_opener
 from PIL import Image
+src, dest, max_width, quality, base, out_name = sys.argv[1:7]
+max_width, quality = int(max_width), int(quality)
 register_heif_opener()
-img = Image.open('$src')
-if img.width > $MAX_WIDTH:
-    ratio = $MAX_WIDTH / img.width
+img = Image.open(src)
+if img.width > max_width:
+    ratio = max_width / img.width
     img = img.resize((int(img.width * ratio), int(img.height * ratio)), Image.LANCZOS)
-img.convert('RGB').save('$dest', 'JPEG', quality=$QUALITY)
-print('Converted: $basename -> ${name}.jpg')
-"
+img.convert('RGB').save(dest, 'JPEG', quality=quality)
+print(f'Converted: {base} -> {out_name}')
+PY
 }
 
 if [ -f "$SOURCE" ]; then

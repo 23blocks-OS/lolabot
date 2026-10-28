@@ -4,6 +4,16 @@ All notable changes to lolabot. Each release is also published on
 [GitHub Releases](https://github.com/23blocks-OS/lolabot/releases) with the same notes.
 Versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.3.1] — 2026-10-28
+
+### Security: review and updates, 2026-10-28
+- `tools/heic-convert.sh`: the file name was pasted into a `python3 -c` program, so an image named with a quote could run code as the bot. Paths now go in as arguments. The default output folder (in `/tmp`) is created private (mode 700) and the script refuses to write through a symlink.
+- `tools/email_client.py`: attachment names from incoming mail are stripped of control characters, a name made only of dots becomes `attachment`, and a file is never written outside its email's folder. New test: `tests/test_attachment_filenames.py`.
+- `setup.sh`: the `ask` helper assigns answers with `printf -v` instead of `eval`.
+- `tools/email-send.sh`: the script path reaches the inline Python through the environment instead of being pasted into the source.
+- `tools/files.sh`, `memory.sh`, `memory-add.sh`, `memory-find.sh`: stop if `cd` fails instead of running in the wrong folder.
+- Reviewed, nothing to change: no committed secrets in history; no `shell=True`, `os.system`, `pickle` or unsafe YAML loading; no disabled TLS verification; the email sanitizer, trust tiers and attachment allowlist already keep outside text away from shells and send paths. The repository has no dependency manifest, no CI and no Dockerfile, so there was nothing to audit or update there (the only pinned install is `memvid-sdk>=2.0.152`).
+
 ## [1.3.0] — 2026-10-19
 
 ### Added
@@ -128,6 +138,7 @@ pa-onboarding) rewritten to Anthropic's skill best practices.
 - The skill's drifted copy of `memory_indexer.py` is removed; the skill uses
   `tools/memory_indexer.py`.
 
+[1.3.1]: https://github.com/23blocks-OS/lolabot/releases/tag/v1.3.1
 [1.3.0]: https://github.com/23blocks-OS/lolabot/releases/tag/v1.3.0
 [1.2.0]: https://github.com/23blocks-OS/lolabot/releases/tag/v1.2.0
 [1.1.1]: https://github.com/23blocks-OS/lolabot/releases/tag/v1.1.1
